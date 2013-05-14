@@ -71,7 +71,7 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 
 		if(!typeId.matches("[1-9]")){ //TODO ( What can be done here is fetch this number list from process diagram ..think)
 			//TODO Refactor , make it configurable or handle validation in other way..
-			return "Provided Type ID Doesnt Exist";
+			return "Provided Type ID Doesnt Exist, please send typeID in range [1-9]";
 		}
 		
 		try{
