@@ -12,10 +12,8 @@ import org.ow2.bonita.facade.def.majorElement.ProcessDefinition;
 import org.ow2.bonita.facade.runtime.ActivityInstance;
 import org.ow2.bonita.facade.runtime.ProcessInstance;
 
-import com.scriptengine.script.constants.ScriptEngineConstants;
 import com.scriptengine.script.workflow.dto.ProcessDetailsDTO;
 import com.scriptengine.script.workflow.dto.TaskDetailsDTO;
-import com.sun.swing.internal.plaf.synth.resources.synth;
 
 
 /**
