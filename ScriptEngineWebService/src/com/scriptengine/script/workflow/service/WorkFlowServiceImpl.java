@@ -30,7 +30,7 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 
     private final static String ROUTE_TO_SCRIPT_PROCESS_VARIABLE = "processVariable";
     private final static String OUTCOME_SELECTION_TASK_VARIABLE = "outcomeList";
-    private final static String END="END_SCRIPT";
+    private final static String END="END_STATE";
 
 
     /**
@@ -291,3 +291,4 @@ public class WorkFlowServiceImpl extends WorkFlowService {
     }
 }
 
+//NOTE: Always put variables in state.. in diagram..for current architecture
