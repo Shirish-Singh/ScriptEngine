@@ -1,7 +1,6 @@
 package com.scriptengine.script.workflow.service;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -302,6 +301,7 @@ public abstract class WorkFlowService {
 		Map<String,ProcessInstance> map=WorkFlowHelper.getCacheMap();
 		map.put(processID, processInstance);
 		WorkFlowHelper.setCacheMap(map);
+		//This is basically to initialize
 		executeTask(processInstance,typeId,null);
 		return processInstance;
 	}

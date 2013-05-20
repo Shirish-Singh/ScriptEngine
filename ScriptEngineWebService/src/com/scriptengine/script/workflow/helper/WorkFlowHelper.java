@@ -28,7 +28,7 @@ public class WorkFlowHelper {
 	
     //TODO: Fetch Below List from Process Context (processvariables2)
     //and Add End State to each LEaf Node of type 2,3,4
-    private final static List<String> LAST_INPUT_DATA=new ArrayList<String>(24);
+    private final static List<String> LAST_INPUT_DATA=new ArrayList<String>();
 	
 	private static ServletContext servletContext = null;
 	

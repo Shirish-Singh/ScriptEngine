@@ -11,10 +11,12 @@ import org.ow2.bonita.facade.def.majorElement.ActivityDefinition;
 import org.ow2.bonita.facade.def.majorElement.DataFieldDefinition;
 import org.ow2.bonita.facade.def.majorElement.ProcessDefinition;
 import org.ow2.bonita.facade.exception.InstanceNotFoundException;
+import org.ow2.bonita.facade.exception.UndeletableInstanceException;
 import org.ow2.bonita.facade.runtime.ActivityInstance;
 import org.ow2.bonita.facade.runtime.ActivityState;
 import org.ow2.bonita.facade.runtime.ProcessInstance;
 import org.ow2.bonita.facade.runtime.TaskInstance;
+import org.ow2.bonita.facade.uuid.ActivityInstanceUUID;
 
 import com.scriptengine.script.Exception.ScriptEngineException;
 import com.scriptengine.script.workflow.dto.ProcessDetailsDTO;
@@ -28,7 +30,7 @@ import com.scriptengine.script.workflow.helper.WorkFlowHelper;
  */
 public class WorkFlowServiceImpl extends WorkFlowService {
 
-    private final static String ROUTE_TO_SCRIPT_PROCESS_VARIABLE = "processVariable";
+    private final static String ROUTE_TO_SCRIPT_PROCESS_VARIABLE = "processVariable"; 
     private final static String OUTCOME_SELECTION_TASK_VARIABLE = "outcomeList";
     private final static String END="END_STATE";
 
@@ -177,12 +179,18 @@ public class WorkFlowServiceImpl extends WorkFlowService {
      */
     public void executeTask(final ProcessInstance processInstance, final String inputData, final String adHocToData) throws ScriptEngineException {
     	try{
-        if (adHocToData != null) {
-            runtimeAPI.setProcessInstanceVariable(getProcessInstanceUUID(), ROUTE_TO_SCRIPT_PROCESS_VARIABLE, adHocToData);
+    		final ActivityInstanceUUID activityInstanceUUID=getCurrentActivity(processInstance).getTask().getUUID();
+    	    runtimeAPI.setActivityInstanceVariable(activityInstanceUUID, OUTCOME_SELECTION_TASK_VARIABLE, inputData);  //TODO:make it configurable
+        if(adHocToData != null){
+            runtimeAPI.setProcessInstanceVariable(processInstance.getProcessInstanceUUID(), ROUTE_TO_SCRIPT_PROCESS_VARIABLE, adHocToData);
+            runtimeAPI.executeTask(activityInstanceUUID, true);
+           // runtimeAPI.startTask(activityInstanceUUID, false);
+            //runtimeAPI.finishTask(activityInstanceUUID, false);
+        }else{
+     //   	   runtimeAPI.executeTask(activityInstanceUUID, true);
+        runtimeAPI.startTask(activityInstanceUUID, true);
+        runtimeAPI.finishTask(activityInstanceUUID, true);
         }
-        runtimeAPI.setVariable(getCurrentActivity(processInstance).getTask().getUUID(), OUTCOME_SELECTION_TASK_VARIABLE, inputData);  //TODO:make it configurable
-        runtimeAPI.startTask(getCurrentActivity(processInstance).getTask().getUUID(), true);
-        runtimeAPI.finishTask(getCurrentActivity(processInstance).getTask().getUUID(), true);
        // runtimeAPI.finishTask(getCurrentActivity(processInstance).getTask().getUUID(), true);
         if(inputData.equals(END) || (adHocToData!=null?adHocToData.equals(END):false)){ //TODO Please take this end state to LAST_INPUT_DATA
         	deleteProcess(processInstance);
@@ -191,6 +199,7 @@ public class WorkFlowServiceImpl extends WorkFlowService {
         	deleteProcess(processInstance);
         }
         LOGGER.log(Level.INFO,"Script Engine: Execute Task:["+inputData+"]");
+
         }catch(Exception exception){
         	LOGGER.log(Level.SEVERE,"Script Engine: executeTask: "+exception.getMessage());
     		exception.printStackTrace();
@@ -213,11 +222,11 @@ public class WorkFlowServiceImpl extends WorkFlowService {
      * @throws ScriptEngineException 
      */
     //TODO make this method private 
-    public void deleteProcess(ProcessInstance pi) throws ScriptEngineException{
+    public void deleteProcess(ProcessInstance processInstance) throws ScriptEngineException{
     	try{ 
     		String processID=null;
     		 for(Map.Entry<String, ProcessInstance> entry: WorkFlowHelper.getCacheMap().entrySet()){
-    			 if(entry.getValue().equals(pi)){
+    			 if(entry.getValue().equals(processInstance)){
     				 processID=entry.getKey();
     			 }
     		 }
@@ -225,12 +234,17 @@ public class WorkFlowServiceImpl extends WorkFlowService {
     			 return;
     		 }
     		 //This is important ..need wrapping ..think 
-    		 runtimeAPI.deleteProcessInstance(pi.getProcessInstanceUUID());
+    		 runtimeAPI.deleteProcessInstance(processInstance.getProcessInstanceUUID());
     		 WorkFlowHelper.getCacheMap().remove(processID);
-    		LOGGER.log(Level.INFO,"Script Engine:Deleting Process"+pi);
+    		LOGGER.log(Level.INFO,"Script Engine:Deleting Process"+processInstance);
     		LOGGER.log(Level.WARNING,"Check Cache Dump: Current Size:"+WorkFlowHelper.getCacheMap().size());
-    		 pi=null;
-    	}catch(Exception exception){
+    		 processInstance=null;
+    	}catch(UndeletableInstanceException  undeletableInstanceException){
+    		LOGGER.log(Level.SEVERE,"Script Engine: deleteProcess: Current processInstance has a parent Instance Active so cannot delete current process Instance"+undeletableInstanceException.getMessage());
+    		undeletableInstanceException.printStackTrace();
+    		throw new ScriptEngineException("ERROR_DELETE_PROCESS_DUE_TO_UNDELETABLE_INSTANCE_EXCEPTION",undeletableInstanceException.getMessage(),undeletableInstanceException.getCause());
+    	}
+    	catch(Exception exception){
     		LOGGER.log(Level.SEVERE,"Script Engine: deleteProcess: "+exception.getMessage());
     		exception.printStackTrace();
     		throw new ScriptEngineException("ERROR_DELETE_PROCESS",exception.getMessage(),exception.getCause());
