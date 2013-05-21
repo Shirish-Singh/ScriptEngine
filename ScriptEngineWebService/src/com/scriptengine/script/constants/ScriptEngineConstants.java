@@ -1,5 +1,10 @@
 package com.scriptengine.script.constants;
 
+/***
+ * CONSTANTS 
+ * @author Shirish singh
+ *
+ */
 public class ScriptEngineConstants {
 	
 	public static final String PHONE_TYPE="1";
