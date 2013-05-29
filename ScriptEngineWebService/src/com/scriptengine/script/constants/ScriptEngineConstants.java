@@ -1,5 +1,8 @@
 package com.scriptengine.script.constants;
 
+import com.scriptengine.script.workflow.helper.WorkFlowHelper;
+
+
 /***
  * CONSTANTS 
  * @author Shirish singh
@@ -19,5 +22,19 @@ public class ScriptEngineConstants {
 	
 	//Setting default to Phone Type
 	public static final String DEFAULT=PHONE_TYPE;
+	
+	
+	//PATH
+	public static final String BAR_FILE_PATH = "/resources/configuration/ScriptEngine.bar";
+	public static final String JAAS_FILE_PATH = "/resources/configuration/jaas-standard.cfg";
+	public static final String BONITA_HOME_PATH = "/resources/bonita";
+	
+	//Time To Live for Stale mapping	
+	public static final Long TIME_TO_LIVE=Long.valueOf(WorkFlowHelper.getServletContext().getInitParameter("TimeToLive")); 
+	
+	//Cron Expression
+	//Job Schedule Time 
+	public static final String SCHEDULE_TIME=WorkFlowHelper.getServletContext().getInitParameter("JobInterval"); //This is a cron expression
+	
 }
 

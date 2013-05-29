@@ -4,17 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.servlet.ServletContext;
-
 import org.ow2.bonita.facade.def.majorElement.DataFieldDefinition;
 import org.ow2.bonita.facade.def.majorElement.ProcessDefinition;
 import org.ow2.bonita.facade.runtime.ActivityInstance;
 import org.ow2.bonita.facade.runtime.ProcessInstance;
-
+import com.scriptengine.script.dto.IncomingDataDTO;
 import com.scriptengine.script.workflow.dto.ProcessDetailsDTO;
 import com.scriptengine.script.workflow.dto.TaskDetailsDTO;
-
+import com.scriptengine.script.workflow.service.WorkFlowServiceImpl;
 
 /**
  * User: Shirish Singh
@@ -22,138 +20,154 @@ import com.scriptengine.script.workflow.dto.TaskDetailsDTO;
  * Time: 12:33 AM
  */
 public class WorkFlowHelper {
-	
-	//TODO //Need to use EHCache
-	private static Map<String,ProcessInstance> cacheMap=null;
-	
-    //TODO: Fetch Below List from Process Context (processvariables2)
-    //and Add End State to each LEaf Node of type 2,3,4
-    private final static List<String> LAST_INPUT_DATA=new ArrayList<String>();
-	
+
+	private static Map<IncomingDataDTO,ProcessInstance> inMemoryCache=null;
+	//TODO: Fetch Below List from Process Context (processvariables2)
+	private final static List<String> LAST_STATE_DATA=new ArrayList<String>();
 	private static ServletContext servletContext = null;
-	
 	public final static String PROCESS_DEFINATION="processDefination";
 	public final static String PROCESS_VARIABLE="processVariable";
-	
-	
-	//Need to use EHCache
-    public static Map<String, ProcessInstance> getCacheMap() {
-		return cacheMap;
-	}
+	private final static WorkFlowServiceImpl INSTANCE=new WorkFlowServiceImpl(); 
 
-	public static void setCacheMap(Map<String, ProcessInstance> cacheMap) {
-		WorkFlowHelper.cacheMap = cacheMap;
+	/**
+	 * getWorkFlowServiceInstance returns WorkFlowService Object
+	 * @return
+	 */
+	public static WorkFlowServiceImpl getWorkFlowServiceInstance(){
+		return INSTANCE;
 	}
 
 	/**
-     *  Construct processDetailsDTO using processDefinition.
-     * @param processDefinition
-     * @param processDetailsDTO
-     * @return
-     */
-    public static ProcessDetailsDTO convertToDTO(ProcessDefinition processDefinition, ProcessDetailsDTO processDetailsDTO) {
-        if (processDefinition == null) {
-            return null;
-        }
-        if (processDetailsDTO == null) {
-            processDetailsDTO = new ProcessDetailsDTO();
-        }
-        DataFieldDefinition dataFieldDefinition=  processDefinition.getDatafield(PROCESS_VARIABLE);
-        Set<String> processVariableSet=dataFieldDefinition.getEnumerationValues();
-        List<String> listProcessVariable=new ArrayList<String>();
-        processDetailsDTO.setProcessID(processDefinition.getUUID().getValue());
-        for(String processVariable:processVariableSet){
-        	listProcessVariable.add(processVariable);
-        }
-        processDetailsDTO.setProcessVariables(listProcessVariable);
-        return processDetailsDTO;
-    }
+	 * Get Cache which Stores mapping (id and processInstance)
+	 * @return
+	 */
+	public static Map<IncomingDataDTO, ProcessInstance> getInMemoryCache() {
+		return inMemoryCache;
+	}
 
-    /**
-     * Construct taskDetailsDTO using ActivityInstance
-     * @param currentActivity
-     * @param taskDetailsDTO
-     * @return
-     */
-    public static TaskDetailsDTO convertToDTO(ActivityInstance currentActivity, TaskDetailsDTO taskDetailsDTO) {
-
-        if (currentActivity == null) {
-            return null;
-        }
-        if (taskDetailsDTO == null) {
-            taskDetailsDTO = new TaskDetailsDTO();
-        }
-        taskDetailsDTO.setTaskID(currentActivity.getActivityInstanceId());
-        taskDetailsDTO.setTaskName(currentActivity.getActivityName());
-        taskDetailsDTO.setTaskDescription(currentActivity.getActivityDescription());
-        return taskDetailsDTO;
-    }
-
+	/**
+	 * Set Cache which Stores mapping (id and processInstance)
+	 * @param inMemoryCache
+	 */
+	public static void setInMemoryCache(Map<IncomingDataDTO, ProcessInstance> inMemoryCache) {
+		WorkFlowHelper.inMemoryCache = inMemoryCache;
+	}
+	
+	/**
+	 * get Servlet Context
+	 * @return
+	 */
+	public static ServletContext getServletContext(){
+		return servletContext;
+	}
+	
+	/**
+	 * Set Servlet Context
+	 * @param servletContext
+	 */
 	public static void setServletContext(ServletContext servletContext) {
 		WorkFlowHelper.servletContext=servletContext;
 	}
 
-	public static ServletContext getServletContext(){
-		return servletContext;
+	/**
+	 *Construct processDetailsDTO using processDefinition.
+	 * @param processDefinition
+	 * @param processDetailsDTO
+	 * @return
+	 */
+	public static ProcessDetailsDTO constructProcessDetailsDTO(ProcessDefinition processDefinition, ProcessDetailsDTO processDetailsDTO) {
+		if (processDefinition == null) {
+			return null;
+		}
+		if (processDetailsDTO == null) {
+			processDetailsDTO = new ProcessDetailsDTO();
+		}
+		List<String> listProcessVariable=new ArrayList<String>();
+		DataFieldDefinition dataFieldDefinition=  processDefinition.getDatafield(PROCESS_VARIABLE);
+		Set<String> processVariableSet=dataFieldDefinition.getEnumerationValues();
+		processDetailsDTO.setProcessID(processDefinition.getUUID().getValue());
+		for(String processVariable:processVariableSet){
+			listProcessVariable.add(processVariable);
+		}
+		processDetailsDTO.setProcessVariables(listProcessVariable);
+		return processDetailsDTO;
 	}
 
 	/**
-	 * Method will combine id and type id and send it to caller as process id as a whole.
-	 * This helps in identifying processId as well as type id.
-	 * @param id
-	 * @param typeId
+	 * Construct taskDetailsDTO using ActivityInstance
+	 * @param currentActivity
+	 * @param taskDetailsDTO
 	 * @return
 	 */
-	public static String getCombinedProcessIdWithTypeId(String id,String typeId){
-		 //TODO Not good Method and code, please simplify
-		return id+typeId; 
+	public static TaskDetailsDTO constructTaskDetailsDTO(ActivityInstance currentActivity, TaskDetailsDTO taskDetailsDTO) {
+		if (currentActivity == null) {
+			return null;
+		}
+		if (taskDetailsDTO == null) {
+			taskDetailsDTO = new TaskDetailsDTO();
+		}
+		taskDetailsDTO.setTaskID(currentActivity.getActivityInstanceId());
+		taskDetailsDTO.setTaskName(currentActivity.getActivityName());
+		taskDetailsDTO.setTaskDescription(currentActivity.getActivityDescription());
+		return taskDetailsDTO;
 	}
+
+	/**
+	 * Returns true if the current selected outcome is last state.
+	 * @param inputData
+	 * @return
+	 */
+	public static boolean isLastInputData(String inputData) {
+		//Check
+		if(WorkFlowHelper.getLastStateList().contains(inputData)){
+			return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * Method to return leaf nodes which doesnt contain END state but are Last State. 
 	 * @return List of Leaf End Node. List<String>
 	 */
-	public static List<String> getLastInputData() {
-		
-		if(LAST_INPUT_DATA.size() > 0){ //TODO NOT GOOD CODE SHOULD CHANGE
-			return LAST_INPUT_DATA;
+	private static List<String> getLastStateList() {
+
+		if(LAST_STATE_DATA.size() > 0){ //TODO NOT GOOD CODE SHOULD CHANGE
+			return LAST_STATE_DATA;
 		}
-//		//END_STATE
-//		LAST_INPUT_DATA.add("END_STATE");
-		//CLIENT_UNAVAILABLE
-		//LAST_INPUT_DATA.add("CALL_ON_SUGGESTED_TIME");
-		//LAST_INPUT_DATA.add("NO_SUGGESTED_TIME");
 		//List with CB
-		LAST_INPUT_DATA.add("REGISTRATION_SUCCESSFUL");
-		LAST_INPUT_DATA.add("REGISTRATION_FAILED");
+		LAST_STATE_DATA.add("REGISTRATION_SUCCESSFUL");
+		LAST_STATE_DATA.add("REGISTRATION_FAILED");
 		//EMAIL 
-    	LAST_INPUT_DATA.add("EMAIL_SENT");
-    	//LETTER
-    	LAST_INPUT_DATA.add("LETTER_SENT");
-    	LAST_INPUT_DATA.add("LETTER_NOT_DELIVERED");
-    	LAST_INPUT_DATA.add("LETTER_DELIVERED");
-    	//VISIT DEBTOR
-    	LAST_INPUT_DATA.add("VISIT_SUCCESSFUL");
-    	LAST_INPUT_DATA.add("INVALID_ADDRESS");
-    	LAST_INPUT_DATA.add("CLIENT_NOT_AT_ADDRESS");
-    	LAST_INPUT_DATA.add("CLIENT_NOT_AT_HOME");
-    	LAST_INPUT_DATA.add("VISIT_CLIENT_DECEASED");
-    	LAST_INPUT_DATA.add("OTHER");
-    	LAST_INPUT_DATA.add("VISITING_AGENT_DISPATCHED");
-    	//SETTLE DEBT
-    	LAST_INPUT_DATA.add("DEBT_SETTLED");
-    	LAST_INPUT_DATA.add("DEBT_NOT_SETTLED");
-    	//PRE-LEGAL
-    	LAST_INPUT_DATA.add("DO_NOT_SUE_DEBTOR");
-    	LAST_INPUT_DATA.add("PRE_LEGAL_SUE_DEBTOR");
-    	LAST_INPUT_DATA.add("AWAITING_DECISION");
-    	//SUE
-    	LAST_INPUT_DATA.add("SUE_IN_PROGRESS");
-    	LAST_INPUT_DATA.add("SUE_SUCCESSFUL");
-    	LAST_INPUT_DATA.add("SUE_FAILED");
-    	//SELL-WRITE OFF
-    	LAST_INPUT_DATA.add("SELL_WRITE_IN_PROGRESS");
-    	LAST_INPUT_DATA.add("SOLD");
-    	LAST_INPUT_DATA.add("WRITE_OFF");
-    	return LAST_INPUT_DATA;
+		LAST_STATE_DATA.add("EMAIL_SENT");
+		//LETTER
+		LAST_STATE_DATA.add("LETTER_SENT");
+		LAST_STATE_DATA.add("LETTER_NOT_DELIVERED");
+		LAST_STATE_DATA.add("LETTER_DELIVERED");
+		//VISIT DEBTOR
+		LAST_STATE_DATA.add("VISIT_SUCCESSFUL");
+		LAST_STATE_DATA.add("INVALID_ADDRESS");
+		LAST_STATE_DATA.add("CLIENT_NOT_AT_ADDRESS");
+		LAST_STATE_DATA.add("CLIENT_NOT_AT_HOME");
+		LAST_STATE_DATA.add("VISIT_CLIENT_DECEASED");
+		LAST_STATE_DATA.add("OTHER");
+		LAST_STATE_DATA.add("VISITING_AGENT_DISPATCHED");
+		//SETTLE DEBT
+		LAST_STATE_DATA.add("DEBT_SETTLED");
+		LAST_STATE_DATA.add("DEBT_NOT_SETTLED");
+		//PRE-LEGAL
+		LAST_STATE_DATA.add("DO_NOT_SUE_DEBTOR");
+		LAST_STATE_DATA.add("PRE_LEGAL_SUE_DEBTOR");
+		LAST_STATE_DATA.add("AWAITING_DECISION");
+		//SUE
+		LAST_STATE_DATA.add("SUE_IN_PROGRESS");
+		LAST_STATE_DATA.add("SUE_SUCCESSFUL");
+		LAST_STATE_DATA.add("SUE_FAILED");
+		//SELL-WRITE OFF
+		LAST_STATE_DATA.add("SELL_WRITE_IN_PROGRESS");
+		LAST_STATE_DATA.add("SOLD");
+		LAST_STATE_DATA.add("WRITE_OFF");
+		
+		//Return
+		return LAST_STATE_DATA;
 	}
 }

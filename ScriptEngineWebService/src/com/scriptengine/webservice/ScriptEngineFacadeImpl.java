@@ -1,5 +1,6 @@
 package com.scriptengine.webservice;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,11 +14,11 @@ import org.ow2.bonita.facade.runtime.ProcessInstance;
 
 import com.scriptengine.script.Exception.ScriptEngineException;
 import com.scriptengine.script.constants.ScriptEngineConstants;
+import com.scriptengine.script.dto.IncomingDataDTO;
 import com.scriptengine.script.workflow.dto.ProcessDetailsDTO;
 import com.scriptengine.script.workflow.dto.TaskDetailsDTO;
 import com.scriptengine.script.workflow.helper.WorkFlowHelper;
-import com.scriptengine.script.workflow.service.WorkFlowService;
-import com.scriptengine.script.workflow.service.WorkFlowServiceImpl;
+import com.scriptengine.script.workflow.utils.TimeUtil;
 
 /**
  * Impl of ScriptEngineFacade
@@ -29,7 +30,7 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 
 	public static String realPath = null;
 
-	private static WorkFlowService workflowService=null;
+	//private static WorkFlowService workflowService=null;
 	
 	private static List<String> adHocList=null;
 	
@@ -46,8 +47,8 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 			realPath = servletContextEvent.getServletContext().getRealPath("/WEB-INF").replace("\\","/"); 
 		//	LOGGER.log(Level.INFO,"Setting Context Path to:"+realPath);
 		//	LOGGER.log(Level.INFO,"Starting Scripting Engine...");
-			workflowService = new WorkFlowServiceImpl();
-			ProcessDetailsDTO processDetailsDTO = workflowService.beginProcess();
+			// WorkFlowHelper.getWorkFlowServiceInstance() = WorkFlowHelper.getWorkFlowServiceInstance();
+			ProcessDetailsDTO processDetailsDTO =  WorkFlowHelper.getWorkFlowServiceInstance().beginProcess();
 			//Set AD Hoc List variables
 			adHocList=processDetailsDTO.getProcessVariables();
 		//	LOGGER.log(Level.INFO,"Scripting Engine Started Successfully...");
@@ -75,11 +76,13 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 		}
 		
 		try{
-			workflowService.login(); //TODO Not Good here
+			 WorkFlowHelper.getWorkFlowServiceInstance().login(); //TODO Not Good here
+			
+			IncomingDataDTO incomingDataDTO=createIncomingDTOObject(id,typeId,TimeUtil.getUnixTimeStamp());
 			//Fetch ProcessInstance
-			ProcessInstance processInstance=workflowService.getProcessInstance(id,typeId);
+			ProcessInstance processInstance= WorkFlowHelper.getWorkFlowServiceInstance().getProcessInstance(incomingDataDTO);
 			//check if processid is present in map cache if yes get process instance id for the same else create process instance id..
-			TaskDetailsDTO currentTaskDetailsDTO = workflowService.fetchTaskDetails(processInstance);
+			TaskDetailsDTO currentTaskDetailsDTO =  WorkFlowHelper.getWorkFlowServiceInstance().fetchTaskDetails(processInstance);
 			/**TODO BELOW LINE CODE SHOULD BE REFACTOR **/
 //			if(typeId.equals(ScriptEngineConstants.LIST_DEBTOR_WITH_CB)){
 //				//Below line will submit outcome for List with Credit bureau. This will remove List with cb from cache.. [REFACTOR THIS]
@@ -106,11 +109,14 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 			return new String[]{"Process ID is Invalid:"+processID+typeId};
 		}
     	try{
-    		workflowService.login();
+    		 WorkFlowHelper.getWorkFlowServiceInstance().login();
+    		
+    		IncomingDataDTO incomingDataDTO=createIncomingDTOObject(processID,typeId,TimeUtil.getUnixTimeStamp());
+    		
     		//Fetch ProcessInstance
-			ProcessInstance processInstance=workflowService.getProcessInstance(processID,typeId);
+			ProcessInstance processInstance= WorkFlowHelper.getWorkFlowServiceInstance().getProcessInstance(incomingDataDTO);
 			
-        List<String> listContact = workflowService.fetchCurrentTaskVariableValues(processInstance);
+        List<String> listContact =  WorkFlowHelper.getWorkFlowServiceInstance().fetchCurrentTaskVariableValues(processInstance);
         listContact=findAndAddAdHocVariables(listContact);
          return  listContact.toArray(new String[listContact.size()]);
     	}catch(Exception exception){
@@ -132,16 +138,22 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 		if(isDataNull(typeId)){
 			return "Type Id is Invalid:"+typeId;
 		}
+		if(!Arrays.asList(fetchPossibleOutcomeList(processID,typeId)).contains(inputData)){
+			return "Input Data is Invalid:"+inputData;
+		}
 		String adHoc=null; 
 		String result="Failed";
 		   try{
-			   workflowService.login();
+			   WorkFlowHelper.getWorkFlowServiceInstance().login();
+			   
+	    		IncomingDataDTO incomingDataDTO=createIncomingDTOObject(processID,typeId,TimeUtil.getUnixTimeStamp());
+	    		
 			 //Fetch ProcessInstance
-				ProcessInstance processInstance=workflowService.getProcessInstance(processID,typeId);
+				ProcessInstance processInstance= WorkFlowHelper.getWorkFlowServiceInstance().getProcessInstance(incomingDataDTO);
 				
 		//Check for adHocData
 		if(getAdHocList().contains(inputData)){
-			List<String> previousOutcomes= workflowService.fetchCurrentTaskVariableValues(processInstance);
+			List<String> previousOutcomes=  WorkFlowHelper.getWorkFlowServiceInstance().fetchCurrentTaskVariableValues(processInstance);
 			if(previousOutcomes.contains(AD_HOC)){
 				adHoc=inputData;
 				inputData=AD_HOC;
@@ -151,11 +163,11 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 		//////////Execute Task
 	    	 if(adHoc!=null){
 	    			//AD HOC SCENARIO
-	 	            workflowService.executeTask(processInstance,inputData, adHoc); //completes current task and based on outcome move to next task. 
+	    		 WorkFlowHelper.getWorkFlowServiceInstance().executeTask(processInstance,inputData, adHoc); //completes current task and based on outcome move to next task. 
 	 	           return result="Success";
 	    	 }
 	        	//REGULAR SCENARIO
-	    		 workflowService.executeTask(processInstance,inputData,null); //completes current task and based on outcome move to next task.
+	    	 WorkFlowHelper.getWorkFlowServiceInstance().executeTask(processInstance,inputData,null); //completes current task and based on outcome move to next task.
 	    		 result="Success";
 	     }catch (Exception e){
 	    	 LOGGER.log(Level.SEVERE,"ERROR[104]: ERROR OCCURED WHILE SUBMITTING LINE ITEM: " + e.getMessage());
@@ -164,8 +176,8 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	}
 
 	private boolean isProcessIDInCorrect(String processID,String typeId) {
-		processID=WorkFlowHelper.getCombinedProcessIdWithTypeId(processID, typeId);
-		return !WorkFlowHelper.getCacheMap().containsKey(processID);
+		IncomingDataDTO incomingDataDTO=createIncomingDTOObject(processID,typeId,TimeUtil.getUnixTimeStamp());
+		return !WorkFlowHelper.getInMemoryCache().containsKey(incomingDataDTO);
 	}
 
 
@@ -183,7 +195,7 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	}
 	
 	private List<String> getAdHocList() throws ScriptEngineException {
-		return workflowService.fetchProcessDetails().getProcessVariables();
+		return  WorkFlowHelper.getWorkFlowServiceInstance().fetchProcessDetails().getProcessVariables();
 	}
 
     private boolean isDataNull(String ...args) {
@@ -197,14 +209,16 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	
 	@Override
 	public String clean() {
-		int size=WorkFlowHelper.getCacheMap().size();
-		for (ProcessInstance pi:WorkFlowHelper.getCacheMap().values()){
+		int size=WorkFlowHelper.getInMemoryCache().size();
+		for (ProcessInstance pi:WorkFlowHelper.getInMemoryCache().values()){
 			try {
-				  workflowService.login();
-				workflowService.deleteProcess(pi);
+				 WorkFlowHelper.getWorkFlowServiceInstance().login();
+				 WorkFlowHelper.getWorkFlowServiceInstance().deleteProcessInstanceAndCacheEntry(pi);
 			} catch (ScriptEngineException e) {
 				e.printStackTrace();
-				WorkFlowHelper.getCacheMap().clear(); //TODO This is safe removing of unwanted stuff from cache ..//TODO when cache is implemented this will be removed..
+				WorkFlowHelper.getInMemoryCache().clear(); //TODO This is safe removing of unwanted stuff from cache ..//TODO when cache is implemented this will be removed..
+				//Need to delete all process as well over here ..think
+				 WorkFlowHelper.getWorkFlowServiceInstance().cleanScriptEngine();
 				return new StringBuilder().append("Script Engine:Exception while Cleaning: "+e.getErrorName()).toString();
 				
 			}
@@ -213,6 +227,22 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 			}
 		}
 		return new StringBuilder().append("Script Engine:Total:[").append(size).append("]Cleared from cache.").toString();
+	}
+	
+	/**
+	 * 
+	 * @param id
+	 * @param typeId
+	 * @param timeStamp
+	 * @return
+	 */
+	private IncomingDataDTO createIncomingDTOObject(String id, String typeId,
+			long timeStamp) {
+		IncomingDataDTO dataDTO=new IncomingDataDTO();
+		dataDTO.setProcessID(id);
+		dataDTO.setTypeID(typeId);
+		dataDTO.setTimeStamp(timeStamp);
+		return dataDTO;
 	}
 	
 }
