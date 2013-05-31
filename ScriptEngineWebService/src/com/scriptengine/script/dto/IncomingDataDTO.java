@@ -7,16 +7,16 @@ package com.scriptengine.script.dto;
  */
 public class IncomingDataDTO {
 	
-	private String processID=null;
+	private String id=null;
 	private String typeID=null;
 	private Long timeStamp=null;
 
-	public String getProcessID() {
-		return processID;
+	public String getId() {
+		return id;
 	}
 
-	public void setProcessID(String processID) {
-		this.processID = processID;
+	public void setId(String id) {
+		this.id = id;
 	}
 
 	public String getTypeID() {
@@ -40,7 +40,7 @@ public class IncomingDataDTO {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result
-				+ ((processID == null) ? 0 : processID.hashCode());
+				+ ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((typeID == null) ? 0 : typeID.hashCode());
 		return result;
 	}
@@ -54,10 +54,10 @@ public class IncomingDataDTO {
 		if (getClass() != obj.getClass())
 			return false;
 		IncomingDataDTO other = (IncomingDataDTO) obj;
-		if (processID == null) {
-			if (other.processID != null)
+		if (id == null) {
+			if (other.id != null)
 				return false;
-		} else if (!processID.equals(other.processID))
+		} else if (!id.equals(other.id))
 			return false;
 		if (typeID == null) {
 			if (other.typeID != null)
@@ -69,7 +69,7 @@ public class IncomingDataDTO {
 
 	@Override
 	public String toString() {
-		return "IncomingDataDTO [processID=" + processID + ", typeID=" + typeID
+		return "IncomingDataDTO [id=" + id + ", typeID=" + typeID
 				+ ", timeStamp=" + timeStamp + "]";
 	}
 	

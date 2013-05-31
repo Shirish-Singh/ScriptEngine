@@ -12,7 +12,6 @@ import com.scriptengine.script.constants.ScriptEngineConstants;
 import com.scriptengine.script.dto.IncomingDataDTO;
 import com.scriptengine.script.workflow.helper.WorkFlowHelper;
 import com.scriptengine.script.workflow.service.WorkFlowService;
-import com.scriptengine.webservice.ScriptEngineFacadeImpl;
 
 /**
  * 
@@ -22,6 +21,8 @@ import com.scriptengine.webservice.ScriptEngineFacadeImpl;
 public class ScriptEngineHelper {
 
 	private final static Logger LOGGER = Logger.getLogger(WorkFlowService.class.getName());
+	
+	private static String realServerPath = null;
 
 	private static final ScriptEngineHelper scriptEngineHelper=new ScriptEngineHelper();
 
@@ -29,6 +30,14 @@ public class ScriptEngineHelper {
 		super();
 	}
 
+	public static String getRealPath() {
+		return realServerPath;
+	}
+
+	public static void setRealPath(String realServerPath) {
+		ScriptEngineHelper.realServerPath = realServerPath;
+	}
+	
 	/**
 	 * Return scriptEngineHelper singleton object
 	 * @return
@@ -42,7 +51,7 @@ public class ScriptEngineHelper {
 	 * @return Path of Bar
 	 */
 	public String getBarPath(){
-		return ScriptEngineFacadeImpl.realPath+ScriptEngineConstants.BAR_FILE_PATH;
+		return getRealPath()+ScriptEngineConstants.BAR_FILE_PATH;
 
 	}
 
@@ -51,7 +60,7 @@ public class ScriptEngineHelper {
 	 * @return Path of JAAS
 	 */
 	public String getJAASPath(){
-		return ScriptEngineFacadeImpl.realPath+ScriptEngineConstants.JAAS_FILE_PATH;
+		return getRealPath()+ScriptEngineConstants.JAAS_FILE_PATH;
 
 	}
 
@@ -60,7 +69,7 @@ public class ScriptEngineHelper {
 	 * @return Path of Bonita Home 
 	 */
 	public String getBonitaHomePath(){
-		return ScriptEngineFacadeImpl.realPath+ScriptEngineConstants.BONITA_HOME_PATH;
+		return getRealPath()+ScriptEngineConstants.BONITA_HOME_PATH;
 
 	}
 	/**

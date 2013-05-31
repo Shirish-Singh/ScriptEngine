@@ -33,15 +33,17 @@ import com.scriptengine.script.workflow.helper.WorkFlowHelper;
 
 /**
  * Work Flow Service To Service Scripting Engine
- * User: Shirish Singh
+ * This Service basically talks to bpm engine.
+ * 
+ * @author Shirish singh
  * Date: 2013/03/25
  * Time: 9:24 AM
- * Last Updated : 14 April 2013
+ * 
+ * @since 1.6
  */
 public abstract class WorkFlowService {
 
-
-	//TODO: may be in next phase...
+	//TODO: enhancement may be in next phase...
 	// 1. login / password authn mechanism
 	//2. Bar_deploy_path
 	//3. JAAS Will be part of project [Shirish: Bonita authentication ]
@@ -52,7 +54,6 @@ public abstract class WorkFlowService {
 	//10.web service security
 	//11. Process Instance state is set to null at the moment , need to deactivate or change the status to inactive or something for process Instance. 
 	//12. REmove collection related code and make Script Engine Generic ...Big Task..think...
-
 	//TODO
 	//Take END and Start State from Process variable
 	//*If in case of Exception of Severe level restart server clean journal automatically.. [Need to get in depth knowledge of Bonita api run time in this case ).
@@ -76,11 +77,12 @@ public abstract class WorkFlowService {
 	protected final RuntimeAPI runtimeAPI = AccessorUtil.getRuntimeAPI();
 	protected final QueryRuntimeAPI queryRuntimeAPI = AccessorUtil.getQueryRuntimeAPI();
 	protected final QueryDefinitionAPI queryDefinationAPI = AccessorUtil.getQueryDefinitionAPI();
-	//Class level objects
+
 	private ProcessDefinition processDefinition=null;
 	private ProcessInstanceUUID processInstanceUUID=null;
 
 	/**
+	 * Function to begin process. Bar File is Deployed. Path's are set. 
 	 * @return ProcessDetailsDTO
 	 * @throws ScriptEngineException 
 	 */
@@ -113,7 +115,18 @@ public abstract class WorkFlowService {
 	}
 
 	/**
-	 * setProcessDefinitionInServletContext
+	 * Login to Bpm
+	 * @throws javax.security.auth.login.LoginException
+	 */
+	public void login() throws LoginException {
+		LOGGER.log(Level.INFO,"Script Engine: Login In Process...");
+		LoginContext loginContext = new LoginContext(AUTHENTICATE_TYPE, new SimpleCallbackHandler(LOGIN, PASSWORD));
+		loginContext.login();
+		LOGGER.log(Level.INFO,"Script Engine: Login Succesfull");
+	}
+	
+	/**
+	 * Set Process Definition in servlet context
 	 * @param processDefinition
 	 */
 	private void setProcessDefinitionInServletContext(
@@ -121,24 +134,15 @@ public abstract class WorkFlowService {
 		WorkFlowHelper.getServletContext().setAttribute(WorkFlowHelper.PROCESS_DEFINATION,processDefinition);
 	}
 
-	/**
-	 * login
-	 * @throws javax.security.auth.login.LoginException
-	 */
-	public void login() throws LoginException {
-		LOGGER.log(Level.INFO,"Script Engine: Login In Process");
-		LoginContext loginContext = new LoginContext(AUTHENTICATE_TYPE, new SimpleCallbackHandler(LOGIN, PASSWORD));
-		loginContext.login();
-		LOGGER.log(Level.INFO,"Script Engine: Login Succesfull");
-	}
 
 	/**
-	 * cleanScriptEngine
+	 * Clean's cache and deletes all processes.
+	 * @return boolean
 	 */
 	public boolean cleanScriptEngine() {
 		try {
 			LOGGER.log(Level.INFO,"Script Engine: Clean In Process");
-			managementAPI.deleteAllProcesses();    //TODO:  R and D
+			managementAPI.deleteAllProcesses();
 			return true;
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE,"Clean- Failed : Script Engine Exception in clean Script Engine ");
@@ -151,12 +155,12 @@ public abstract class WorkFlowService {
 	}
 
 	/**
-	 * deployBar
+	 * Function to Deploy Bar
 	 * @return
 	 * @throws Exception
 	 */
 	protected ProcessDefinition deployBar() throws Exception {
-		LOGGER.log(Level.INFO,"Script Engine: Deploying Bar...");
+		LOGGER.log(Level.INFO,"Script Engine: Deploying Bar");
 		//deploy the bar file
 		File barFile = new File(ScriptEngineHelper.getInstance().getBarPath());
 		BusinessArchive businessArchive = BusinessArchiveFactory.getBusinessArchive(barFile);
@@ -164,17 +168,17 @@ public abstract class WorkFlowService {
 	}
 	
 	/**
-	 * getProcessInstance : Fetch Process Instance
+	 * Function to return associated Process Instance for the passed incoming Data DTO
 	 * @param incomingDataDTO
-	 * @return
+	 * @return processInstance
 	 * @throws Exception
 	 */
 	public ProcessInstance getProcessInstance(IncomingDataDTO incomingDataDTO) throws Exception {
-
+		//Check in cache
 		if(WorkFlowHelper.getInMemoryCache().containsKey(incomingDataDTO)){
 			return WorkFlowHelper.getInMemoryCache().get(incomingDataDTO);
 		}
-		
+		//Not present in cache create one and initialise
 		//This Code is to initialise Script Engine and take it to State depending on Type Id.
 		ProcessDefinition definition=(ProcessDefinition) WorkFlowHelper.getServletContext().getAttribute(WorkFlowHelper.PROCESS_DEFINATION);
 		Map<IncomingDataDTO,ProcessInstance> map=WorkFlowHelper.getInMemoryCache();
@@ -183,14 +187,14 @@ public abstract class WorkFlowService {
 			ProcessInstance processInstance=queryRuntimeAPI.getProcessInstance(processInstanceUUID);
 			map.put(incomingDataDTO, processInstance);
 			WorkFlowHelper.setInMemoryCache(map);
-			//This is basically to initialize
+			//This is basically to initialise
 			executeTask(processInstance,incomingDataDTO.getTypeID(),null);
 			return processInstance;
 		}
 	}
 
 	/**
-	 * instantiateProcess
+	 * instantiate Process
 	 * @param processDefinition
 	 * @return ProcessInstanceUUID
 	 * @throws Exception
@@ -227,21 +231,19 @@ public abstract class WorkFlowService {
 	}
 
 	/**
-	 * fetchCurrentTaskVariableValues function
-	 * Fetch Current Ready/Active Task's variables list.
+	 * Function to fetch the Current Ready/Active Task's variables list.
 	 *
 	 * @param processInstance
-	 * @return
-	 * @throws Exception 
+	 * @return list of variables for current task.
+	 * @throws ScriptEngineException 
 	 */
 
 	abstract public List<String> fetchCurrentTaskVariableValues(ProcessInstance processInstance) throws ScriptEngineException;
 
 	/**
-	 * fetchTaskDetailsDTO
-	 *
-	 * @param processID
-	 * @return
+	 * Fetch TaskDetails
+	 * @param processInstance
+	 * @return TaskDetailsDTO
 	 * @throws ScriptEngineException 
 	 * @throws InstanceNotFoundException 
 	 * @throws Exception 
@@ -249,27 +251,26 @@ public abstract class WorkFlowService {
 	abstract public TaskDetailsDTO fetchTaskDetails(final ProcessInstance processInstance) throws ScriptEngineException, InstanceNotFoundException, Exception; 
 
 	/**
-	 * Fetch Process Details
-	 *
-	 * @return
+	 * Fetch ProcessDetails
+	 * @return ProcessDetailsDTO
 	 * @throws ScriptEngineException 
 	 */
 	abstract public ProcessDetailsDTO fetchProcessDetails() throws ScriptEngineException;
 
 	/**
-	 * executeTask
-	 *
-	 * @param processID
+	 * Function to Execute Task
+	 * @param processInstance
 	 * @param inputData
 	 * @param adHocToData
-	 * @throws Exception 
+	 * @throws ScriptEngineException 
 	 */
 	abstract public void executeTask(ProcessInstance processInstance, String inputData, String adHocToData) throws ScriptEngineException;
 
 	/**
-	 * TODO This method is sensitive please make it private...
-	 * @param pi
+	 * Function to clear cache and process Instance associated with it.
+	 * @param processInstance
 	 * @throws ScriptEngineException
 	 */
-	abstract public void deleteProcessInstanceAndCacheEntry(ProcessInstance pi) throws ScriptEngineException;
+	//TODO This method should be private...
+	abstract public void deleteProcessInstanceAndCacheEntry(ProcessInstance processInstance) throws ScriptEngineException;
 }

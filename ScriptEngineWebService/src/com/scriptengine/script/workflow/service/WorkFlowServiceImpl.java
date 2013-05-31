@@ -25,23 +25,33 @@ import com.scriptengine.script.workflow.dto.TaskDetailsDTO;
 import com.scriptengine.script.workflow.helper.WorkFlowHelper;
 
 /**
- * User: Shirish Singh
+ * Skeletal implementation of {@link WorkFlowService}.
+ * @author Shirish Singh
  * Date: 2013/03/22
  * Time: 12:19 PM
+ * 
+ * @since 1.6
  */
 public class WorkFlowServiceImpl extends WorkFlowService {
 
-	private final static String ROUTE_TO_SCRIPT_PROCESS_VARIABLE = "processVariable"; 
+	/**
+	 * Name of the process variable in bpm process diagram.
+	 */
+	private final static String ROUTE_TO_SCRIPT_PROCESS_VARIABLE = "processVariable";
+	/**
+	 * Name of the outcome's variable in bpm process diagram. 
+	 */
 	private final static String OUTCOME_SELECTION_TASK_VARIABLE = "outcomeList";
+	/**
+	 * Name of the End State varaible in bpm process diagram.
+	 */
 	private final static String END="END_STATE";
 
 
 	/**
-	 * Get task details dto, basically returns active or ready state task.
-	 *
-	 * @param processID
+	 * Function to Get task details DTO, basically returns active or ready state task.
+	 * @param processInstance
 	 * @return TaskDetailsDTO
-	 * @throws InstanceNotFoundException 
 	 * @throws Exception 
 	 */
 	@Override

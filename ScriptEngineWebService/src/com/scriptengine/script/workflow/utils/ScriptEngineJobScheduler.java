@@ -16,40 +16,43 @@ import com.scriptengine.script.helper.ScriptEngineHelper;
 import com.scriptengine.script.workflow.helper.WorkFlowHelper;
 
 /**
- * Job for cleaning stale mapping.
- * 
+ * Job Scheduler for scheduling job that runs at the given interval and cleans stale mapping's if present in cache.
+
  * @author Shirish Singh
- * 
+ * @since 1.6
  */
 public class ScriptEngineJobScheduler implements Job {
 
-	protected final static Logger LOGGER = Logger
-			.getLogger(ScriptEngineJobScheduler.class.getName());
-
+	protected final static Logger LOGGER = Logger.getLogger(ScriptEngineJobScheduler.class.getName());
+	
+	/**
+	 * @see Job#execute(JobExecutionContext)
+	 */
 	@Override
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 
 		LOGGER.log(Level.INFO,"------------------------------Job Started-----------------------------------------------------------");
-		LOGGER.log(Level.INFO,"<<<<<Job For Cleaning Stale Mapping From Cache is Running>>>>>"); 
+		LOGGER.log(Level.INFO,"<<<<<-- Job For Cleaning Stale Mapping From Cache is Running -->>>>>"); 
 		Map<IncomingDataDTO, ProcessInstance> mappingMap =WorkFlowHelper.getInMemoryCache();
 		Iterator<Map.Entry<IncomingDataDTO, ProcessInstance>> entries = mappingMap.entrySet().iterator();
 		//Iterate map entries
 		while (entries.hasNext()) {
+			LOGGER.log(Level.INFO,"<<<<<-- Total Entries in Memory Cache:" + mappingMap.size()+" at TimeStamp:"+TimeUtil.getUnixTimeStamp()+" -->>>>>");
 			Map.Entry<IncomingDataDTO, ProcessInstance> entry = entries.next();
 			IncomingDataDTO dataDTO=entry.getKey();
 			Long futureTimeStamp=dataDTO.getTimeStamp()+ScriptEngineConstants.TIME_TO_LIVE;
 			Long currentTimeStamp=TimeUtil.getUnixTimeStamp();
-			
-			LOGGER.log(Level.INFO,"Entries in Memory Cache:" + mappingMap.size()+" at TimeStamp:"+currentTimeStamp);
-			LOGGER.log(Level.INFO,"End TimeStamp:" + futureTimeStamp);
-			LOGGER.log(Level.INFO,"Current TimeStamp:" + currentTimeStamp);
+			LOGGER.log(Level.INFO,"<<<<<-- Current TimeStamp:" + currentTimeStamp+" -->>>>>");
+			LOGGER.log(Level.INFO,"<<<<<-- Incoming DTO Time Stamp:" + dataDTO.getTimeStamp()+" -->>>>>");
+			LOGGER.log(Level.INFO,"<<<<<-- Total Time To Live TimeStamp:" + futureTimeStamp+" -->>>>>");
 
-			//Check if currentTimeStamp exceeds futureTimeStamp in order to remove or keep the instance in cache.
+			//Check if currentTimeStamp exceeds futureTimeStamp in order to decide whether to remove or keep the instance in cache.
 			if(currentTimeStamp>futureTimeStamp){
-				LOGGER.log(Level.INFO,"Removing mapping and delete ProcessInstance");
+				LOGGER.log(Level.INFO,"<<<<<-- Stale Mapping Found, Removing mapping and deleting ProcessInstance"+" -->>>>>");
 				boolean result=ScriptEngineHelper.getInstance().clean(dataDTO);
-				LOGGER.log(Level.INFO,"Process instance for id: "+dataDTO.getProcessID()+" and Type Id:"+dataDTO.getTypeID() +" Deleted:"+result);
+				LOGGER.log(Level.INFO,"<<<<<-- Process instance for id: "+dataDTO.getId()+" and Type Id:"+dataDTO.getTypeID() +" Deleted:"+result+" -->>>>>" );
 			}
+			LOGGER.log(Level.INFO,"<<<<<-- Total Entries in Memory Cache:" + mappingMap.size()+" at TimeStamp:"+TimeUtil.getUnixTimeStamp()+" -->>>>>");
 		}
 		LOGGER.log(Level.INFO,"-----------------------------Job Ended-------------------------------------------------------------");
 	}

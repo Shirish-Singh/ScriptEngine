@@ -10,6 +10,10 @@ import com.scriptengine.script.workflow.helper.WorkFlowHelper;
  */
 public class ScriptEngineConstants {
 	
+	
+	public static final String SUCCESS="Success";
+	public static final String FAILED="Failed";
+	
 	public static final String PHONE_TYPE="1";
 	public static final String EMAIL_TYPE="2";
 	public static final String SEND_LETTER_TYPE="3";
@@ -19,6 +23,7 @@ public class ScriptEngineConstants {
 	public static final String PRE_LEGAL="7";
 	public static final String SUE_DEBTOR="8";
 	public static final String SELL_WRITE_OFF="9";
+	
 	
 	//Setting default to Phone Type
 	public static final String DEFAULT=PHONE_TYPE;

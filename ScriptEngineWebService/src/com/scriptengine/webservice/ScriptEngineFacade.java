@@ -7,56 +7,57 @@ import javax.jws.soap.SOAPBinding.Style;
 import javax.servlet.ServletContextEvent;
 
 /**
- * ScriptEngineFacade is basically Web Service Interface that will be exposed to Client.
+ * <code>ScriptEngineFacade</code> exposes basic functions that can be used to
+ * perform operations on Script Engine. <br>
+ * <code>ScriptEngineFacade</code> is an web service. </p>
+ * 
  * @author Shirish singh
- *
+ * @since 1.6
  */
 @WebService
-@SOAPBinding(style=Style.RPC)
+@SOAPBinding(style = Style.RPC)
 public interface ScriptEngineFacade {
-	
-	//ACCESS URL : http://localhost:8080/ScriptEngineWebService/se?wsdl
-	
-	/**
-	 * @param id
-	 * @param typeId
-	 * @return currentScript/error if any
-	 */
-	@WebMethod
-	String fetchCurrentScript(String id,String typeId);
 
 	/**
+	 * Function to get current script name, requires an unique id and type id to
+	 * be passed.
 	 * 
-	 * @param scriptProcessId
+	 * @param id
 	 * @param typeId
-	 * @return
+	 * @return current script name or error if any.
 	 */
 	@WebMethod
-	String[] fetchPossibleOutcomeList(String scriptProcessId,String typeId);
-	
+	String fetchCurrentScript(String id, String typeId);
+
 	/**
+	 * Function to get outcome list associated with provided id and type id.
 	 * 
-	 * @param processID
+	 * @param id
+	 * @param typeId
+	 * @return list of outcomes
+	 */
+	@WebMethod
+	String[] fetchPossibleOutcomeList(String id, String typeId);
+
+	/**
+	 * Function to submit the selected outcome and proceed to next state.
+	 * 
+	 * @param id
 	 * @param typeId
 	 * @param inputData
-	 * @return isSuccesfull = "Successful"/"Failed" 
+	 *            selected outcome
+	 * @return If it is successful then it returns "Successful" else it returns
+	 *         "Failed" for failure
 	 */
 	@WebMethod
-	 public String submitLineItem(String processID,String typeId,String inputData);
-	
+	public String submitLineItem(String id, String typeId, String inputData);
+
 	/**
+	 * Function to start Script Engine service.
 	 * 
 	 * @param servletContext
-	 * @return
+	 * @return script engine process id
 	 */
-	@WebMethod(exclude=true)
+	@WebMethod(exclude = true)
 	public String startScriptService(ServletContextEvent servletContextEvent);
-	
-	/**
-	 * 
-	 * @param 
-	 * @return
-	 */
-	@WebMethod
-	public String clean();
 }

@@ -36,7 +36,7 @@ public class ScriptEngineWSServletListener implements ServletContextListener {
 	public void contextInitialized(ServletContextEvent servletContextEvent) {
 		LOGGER.log(Level.INFO, "Script Engine: Context Intialized");
 		//Important to set realPath
-		ScriptEngineFacadeImpl.realPath = servletContextEvent.getServletContext().getRealPath(WEB_INF).replace("\\","/"); 
+		//ScriptEngineFacadeImpl.realPath = servletContextEvent.getServletContext().getRealPath(WEB_INF).replace("\\","/"); 
 		ScriptEngineFacade scriptEngine = new ScriptEngineFacadeImpl();
 		scriptEngine.startScriptService(servletContextEvent);
 		//Setup Job
