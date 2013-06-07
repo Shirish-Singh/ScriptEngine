@@ -24,11 +24,13 @@ import com.scriptengine.script.workflow.utils.TimeUtil;
  * Skeletal implementation of {@link ScriptEngineFacade}.
  * 
  * @author Shirish singh
- * @since 1.6
  */
 @WebService(endpointInterface = "com.scriptengine.webservice.ScriptEngineFacade")
 public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 
+	/**
+	 * Logger for logging purpose
+	 */
 	protected final static Logger LOGGER = Logger.getLogger(ScriptEngineFacade.class.getName());
 
 	/**
@@ -48,13 +50,13 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	public String startScriptService(ServletContextEvent servletContextEvent) {
 		try {
 			// Set Real Path
-			ScriptEngineHelper.setRealPath(servletContextEvent.getServletContext().getRealPath("/WEB-INF").replace("\\", "/"));
+			ScriptEngineHelper.setRealServerPath(servletContextEvent.getServletContext().getRealPath("/WEB-INF").replace("\\", "/"));
 			// Set Servlet Context
 			WorkFlowHelper.setServletContext(servletContextEvent.getServletContext());
 			ProcessDetailsDTO processDetailsDTO = WorkFlowHelper.getWorkFlowServiceInstance().beginProcess();
 			// Set AD_HOC variables to AD_HOC List
 			adHocList = processDetailsDTO.getProcessVariables();
-			return processDetailsDTO.getProcessID();
+			return processDetailsDTO.getProcessId();
 		} catch (ScriptEngineException e) {
 			return "ERROR[101]:ERROR OCCURED WHILE STARTING SCRIPTING ENGINE: "+ e.getMessage();
 		}
@@ -67,7 +69,7 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	@WebMethod
 	public String fetchCurrentScript(String id, String typeId) {
 		if (isDataNull(id)) {
-			return "Incoming Data is Invalid";
+			return "VALIDATION ERROR: Incoming Data is Invalid";
 		}
 		if (isDataNull(typeId)) {
 			typeId = ScriptEngineConstants.DEFAULT;
@@ -79,13 +81,13 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 			// ..think)
 			// TODO Refactor , make it configurable or handle validation in
 			// other way..
-			return "Provided Type ID Doesnt Exist, please send typeID in range [1-9]";
+			return "VALIDATION ERROR: Provided Type ID Doesnt Exist, please send typeID in range [1-9]";
 		}
 		try {
 			// Login to proceed
 			WorkFlowHelper.getWorkFlowServiceInstance().login(); // TODO Not Good here
 			// Create IncomingDataDTO
-			IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId, TimeUtil.getUnixTimeStamp());
+			IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId, TimeUtil.getCurrentUnixTimeStamp());
 			// Fetch ProcessInstance
 			// Check if incomingDataDTO is present in cache if yes get process
 			// instance for the same else create process instance and return it.
@@ -105,18 +107,18 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	@WebMethod
 	public String[] fetchPossibleOutcomeList(String id, String typeId) {
 		if (isDataNull(id)) {
-			return new String[] { "Incoming Data is Invalid:" + id };
+			return new String[] { "VALIDATION ERROR: Incoming Data is Invalid:" + id };
 		}
 		if (isDataNull(typeId)) {
-			return new String[] { "Type ID is Invalid:" + typeId };
+			return new String[] { "VALIDATION ERROR: Type ID is Invalid:" + typeId };
 		}
 		if (isProcessIDInCorrect(id, typeId)) {
-			return new String[] { "Process ID is Invalid:" + id + typeId };
+			return new String[] { "VALIDATION ERROR: Process ID is Invalid:" + id + typeId };
 		}
 		try {
 			// Login to proceed
 			WorkFlowHelper.getWorkFlowServiceInstance().login();
-			IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId, TimeUtil.getUnixTimeStamp());
+			IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId, TimeUtil.getCurrentUnixTimeStamp());
 			// Fetch ProcessInstance
 			ProcessInstance processInstance = WorkFlowHelper.getWorkFlowServiceInstance().getProcessInstance(incomingDataDTO);
 			List<String> listContact = WorkFlowHelper.getWorkFlowServiceInstance().fetchCurrentTaskVariableValues(processInstance);
@@ -136,23 +138,23 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	public String submitLineItem(String id, String typeId, String inputData) {
 		// TODO Validation process for fetch/submit
 		if (isDataNull(id, inputData)) {
-			return "Incoming Data is Invalid:" + id + " and " + inputData; // SB
+			return "VALIDATION ERROR: Incoming Data is Invalid:" + id + " and " + inputData; // SB
 		}
 		if (isProcessIDInCorrect(id, typeId)) {
-			return "Process ID is Invalid:" + id + typeId; // SB
+			return "VALIDATION ERROR: Process ID is Invalid:" + id + typeId; // SB
 		}
 		if (isDataNull(typeId)) {
-			return "Type Id is Invalid:" + typeId;
+			return "VALIDATION ERROR: Type Id is Invalid:" + typeId;
 		}
 		if (!Arrays.asList(fetchPossibleOutcomeList(id, typeId)).contains(
 				inputData)) {
-			return "Input Data is Invalid:" + inputData;
+			return "VALIDATION ERROR: Input Data is Invalid:" + inputData;
 		}
 		String result = ScriptEngineConstants.FAILED;
 		try {
 			String adHoc = null;
 			WorkFlowHelper.getWorkFlowServiceInstance().login();
-			IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId, TimeUtil.getUnixTimeStamp());
+			IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId, TimeUtil.getCurrentUnixTimeStamp());
 			// Fetch ProcessInstance
 			ProcessInstance processInstance = WorkFlowHelper.getWorkFlowServiceInstance().getProcessInstance(incomingDataDTO);
 			// Check for adHocData
@@ -184,12 +186,13 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	/*************************UTIL METHODS ************************************/
 	/**
 	 * Validate ProcessId
+	 * 
 	 * @param id
 	 * @param typeId
 	 * @return
 	 */
 	private boolean isProcessIDInCorrect(String id, String typeId) {
-		IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId,TimeUtil.getUnixTimeStamp()); //TODO: This should not be done here..
+		IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId,TimeUtil.getCurrentUnixTimeStamp()); //TODO: This should not be done here..
 		return !WorkFlowHelper.getInMemoryCache().containsKey(incomingDataDTO);
 	}
 
@@ -222,6 +225,7 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 
 	/**
 	 * Validate if data is null
+	 * 
 	 * @param args
 	 * @return boolean
 	 */
@@ -235,7 +239,8 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	}
 
 	/**
-	 * Create Incoming DTO Object 
+	 * Create Incoming DTO Object
+	 *  
 	 * @param id
 	 * @param typeId
 	 * @param timeStamp
@@ -244,7 +249,7 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	private IncomingDataDTO createIncomingDataDTO(String id, String typeId,long timeStamp) {
 		IncomingDataDTO dataDTO = new IncomingDataDTO();
 		dataDTO.setId(id);
-		dataDTO.setTypeID(typeId);
+		dataDTO.setTypeId(typeId);
 		dataDTO.setTimeStamp(timeStamp);
 		return dataDTO;
 	}

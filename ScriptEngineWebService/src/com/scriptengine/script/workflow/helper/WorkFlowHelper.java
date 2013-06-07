@@ -15,23 +15,43 @@ import com.scriptengine.script.workflow.dto.TaskDetailsDTO;
 import com.scriptengine.script.workflow.service.WorkFlowServiceImpl;
 
 /**
+ * An Helper Class for Work Flow Service
+ * 
  * User: Shirish Singh
  * Date: 3/30/13
  * Time: 12:33 AM
  */
 public class WorkFlowHelper {
 
+	/**
+	 * In Memory Cache for maintaining cache 
+	 */
 	private static Map<IncomingDataDTO,ProcessInstance> inMemoryCache=null;
 	//TODO: Fetch Below List from Process Context (processvariables2)
+	/**
+	 * List of last state
+	 */
 	private final static List<String> LAST_STATE_DATA=new ArrayList<String>();
+	/**
+	 * Servlet context for storing process defination attribute
+	 */
 	private static ServletContext servletContext = null;
+	
+	/**
+	 * Instance of Work Flow Service
+	 */
+	private final static WorkFlowServiceImpl INSTANCE=new WorkFlowServiceImpl();
+	/**
+	 * Constants
+	 */
 	public final static String PROCESS_DEFINATION="processDefination";
 	public final static String PROCESS_VARIABLE="processVariable";
-	private final static WorkFlowServiceImpl INSTANCE=new WorkFlowServiceImpl(); 
+	
 
 	/**
-	 * getWorkFlowServiceInstance returns WorkFlowService Object
-	 * @return
+	 * GetWorkFlowServiceInstance returns WorkFlowService Object
+	 * 
+	 * @return INSTANCE
 	 */
 	public static WorkFlowServiceImpl getWorkFlowServiceInstance(){
 		return INSTANCE;
@@ -39,7 +59,8 @@ public class WorkFlowHelper {
 
 	/**
 	 * Get Cache which Stores mapping (id and processInstance)
-	 * @return
+	 * 
+	 * @return inMemoryCache
 	 */
 	public static Map<IncomingDataDTO, ProcessInstance> getInMemoryCache() {
 		return inMemoryCache;
@@ -47,6 +68,7 @@ public class WorkFlowHelper {
 
 	/**
 	 * Set Cache which Stores mapping (id and processInstance)
+	 * 
 	 * @param inMemoryCache
 	 */
 	public static void setInMemoryCache(Map<IncomingDataDTO, ProcessInstance> inMemoryCache) {
@@ -54,8 +76,9 @@ public class WorkFlowHelper {
 	}
 	
 	/**
-	 * get Servlet Context
-	 * @return
+	 * Get Servlet Context
+	 * 
+	 * @return servletContext
 	 */
 	public static ServletContext getServletContext(){
 		return servletContext;
@@ -63,6 +86,7 @@ public class WorkFlowHelper {
 	
 	/**
 	 * Set Servlet Context
+	 * 
 	 * @param servletContext
 	 */
 	public static void setServletContext(ServletContext servletContext) {
@@ -71,9 +95,10 @@ public class WorkFlowHelper {
 
 	/**
 	 *Construct processDetailsDTO using processDefinition.
+	 *
 	 * @param processDefinition
 	 * @param processDetailsDTO
-	 * @return
+	 * @return ProcessDetailsDTO
 	 */
 	public static ProcessDetailsDTO constructProcessDetailsDTO(ProcessDefinition processDefinition, ProcessDetailsDTO processDetailsDTO) {
 		if (processDefinition == null) {
@@ -85,7 +110,7 @@ public class WorkFlowHelper {
 		List<String> listProcessVariable=new ArrayList<String>();
 		DataFieldDefinition dataFieldDefinition=  processDefinition.getDatafield(PROCESS_VARIABLE);
 		Set<String> processVariableSet=dataFieldDefinition.getEnumerationValues();
-		processDetailsDTO.setProcessID(processDefinition.getUUID().getValue());
+		processDetailsDTO.setProcessId(processDefinition.getUUID().getValue());
 		for(String processVariable:processVariableSet){
 			listProcessVariable.add(processVariable);
 		}
@@ -95,9 +120,10 @@ public class WorkFlowHelper {
 
 	/**
 	 * Construct taskDetailsDTO using ActivityInstance
+	 * 
 	 * @param currentActivity
 	 * @param taskDetailsDTO
-	 * @return
+	 * @return TaskDetailsDTO
 	 */
 	public static TaskDetailsDTO constructTaskDetailsDTO(ActivityInstance currentActivity, TaskDetailsDTO taskDetailsDTO) {
 		if (currentActivity == null) {
@@ -114,8 +140,9 @@ public class WorkFlowHelper {
 
 	/**
 	 * Returns true if the current selected outcome is last state.
+	 * 
 	 * @param inputData
-	 * @return
+	 * @return boolean
 	 */
 	public static boolean isLastInputData(String inputData) {
 		//Check
@@ -127,6 +154,7 @@ public class WorkFlowHelper {
 	
 	/**
 	 * Method to return leaf nodes which doesnt contain END state but are Last State. 
+	 * 
 	 * @return List of Leaf End Node. List<String>
 	 */
 	private static List<String> getLastStateList() {

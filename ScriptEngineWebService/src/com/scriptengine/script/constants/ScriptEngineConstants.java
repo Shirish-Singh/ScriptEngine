@@ -2,18 +2,18 @@ package com.scriptengine.script.constants;
 
 import com.scriptengine.script.workflow.helper.WorkFlowHelper;
 
-
 /***
- * CONSTANTS 
+ * Script Engine CONSTANTS 
+ * 
  * @author Shirish singh
- *
  */
 public class ScriptEngineConstants {
 	
-	
+	//General Constants
 	public static final String SUCCESS="Success";
 	public static final String FAILED="Failed";
 	
+	//Type Constants
 	public static final String PHONE_TYPE="1";
 	public static final String EMAIL_TYPE="2";
 	public static final String SEND_LETTER_TYPE="3";
@@ -24,12 +24,10 @@ public class ScriptEngineConstants {
 	public static final String SUE_DEBTOR="8";
 	public static final String SELL_WRITE_OFF="9";
 	
-	
 	//Setting default to Phone Type
 	public static final String DEFAULT=PHONE_TYPE;
 	
-	
-	//PATH
+	//Path required at run time
 	public static final String BAR_FILE_PATH = "/resources/configuration/ScriptEngine.bar";
 	public static final String JAAS_FILE_PATH = "/resources/configuration/jaas-standard.cfg";
 	public static final String BONITA_HOME_PATH = "/resources/bonita";
@@ -40,6 +38,5 @@ public class ScriptEngineConstants {
 	//Cron Expression
 	//Job Schedule Time 
 	public static final String SCHEDULE_TIME=WorkFlowHelper.getServletContext().getInitParameter("JobInterval"); //This is a cron expression
-	
 }
 

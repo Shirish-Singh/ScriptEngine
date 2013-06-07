@@ -39,7 +39,6 @@ import com.scriptengine.script.workflow.helper.WorkFlowHelper;
  * Date: 2013/03/25
  * Time: 9:24 AM
  * 
- * @since 1.6
  */
 public abstract class WorkFlowService {
 
@@ -188,7 +187,7 @@ public abstract class WorkFlowService {
 			map.put(incomingDataDTO, processInstance);
 			WorkFlowHelper.setInMemoryCache(map);
 			//This is basically to initialise
-			executeTask(processInstance,incomingDataDTO.getTypeID(),null);
+			executeTask(processInstance,incomingDataDTO.getTypeId(),null);
 			return processInstance;
 		}
 	}

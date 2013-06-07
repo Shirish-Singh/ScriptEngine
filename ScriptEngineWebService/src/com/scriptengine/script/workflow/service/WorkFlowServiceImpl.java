@@ -26,11 +26,11 @@ import com.scriptengine.script.workflow.helper.WorkFlowHelper;
 
 /**
  * Skeletal implementation of {@link WorkFlowService}.
+ * 
  * @author Shirish Singh
  * Date: 2013/03/22
  * Time: 12:19 PM
  * 
- * @since 1.6
  */
 public class WorkFlowServiceImpl extends WorkFlowService {
 
@@ -50,16 +50,19 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 
 	/**
 	 * Function to Get task details DTO, basically returns active or ready state task.
+	 * 
 	 * @param processInstance
 	 * @return TaskDetailsDTO
 	 * @throws Exception 
 	 */
 	@Override
 	public TaskDetailsDTO fetchTaskDetails(final ProcessInstance processInstance) throws Exception {
+		//Get set of Activity instance
 		Set<ActivityInstance> activityInstances=queryRuntimeAPI.getActivityInstances(processInstance.getProcessInstanceUUID());
 		ActivityInstance readyActivityInstance=null;
 		for(ActivityInstance activityInstance:activityInstances){
-			if(activityInstance.getState()==ActivityState.READY){
+			//Check for ready State only
+			if(activityInstance.getState().equals(ActivityState.READY)){
 				readyActivityInstance=activityInstance;
 				break;
 			}
@@ -77,7 +80,6 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 	/**
 	 * Get task details dto, basically returns active or ready state task.
 	 *
-	 * @param processID
 	 * @return ProcessDetailsDTO
 	 * @throws ScriptEngineException 
 	 */
@@ -86,7 +88,7 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 		try {
 			return WorkFlowHelper.constructProcessDetailsDTO((ProcessDefinition) WorkFlowHelper.getServletContext().getAttribute(WorkFlowHelper.PROCESS_DEFINATION), null);
 		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE,"Script Engine: Something Wrong with Process: "+e.getMessage());
+			LOGGER.log(Level.SEVERE,"Script Engine: Something Went Wrong with fetchProcessDetails: "+e.getMessage());
 			e.printStackTrace();
 			throw new ScriptEngineException("ERROR_FETCHING_PROCESS_DETAILS",e.getMessage(),e.getCause());
 		}
@@ -103,7 +105,7 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 		Collection<TaskInstance> tasks=queryRuntimeAPI.getTasks(processInstance.getProcessInstanceUUID());
 		//Check there should be only one task in active state
 		for(TaskInstance instance:tasks){
-			if(instance.getState()==ActivityState.READY || instance.getState()==ActivityState.EXECUTING)
+			if(instance.getState().equals(ActivityState.READY) || instance.getState().equals(ActivityState.EXECUTING))
 				return instance;
 		}
 		LOGGER.log(Level.SEVERE,"No ActivityInstance in Ready State...");
@@ -112,10 +114,9 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 
 
 	/**
-	 * Basic Execution of task is perform here ,based on
+	 * Basic Execution of task is performed here ,based on
 	 * task variable value or process variable value and conditions that are available, transition to next task takes place.
 	 *
-	 * @param processID
 	 * @param inputData
 	 * @param adHocToData
 	 * @throws ScriptEngineException 
@@ -123,7 +124,7 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 	public void executeTask(final ProcessInstance processInstance, final String inputData, final String adHocToData) throws ScriptEngineException {
 		try{
 			final ActivityInstanceUUID activityInstanceUUID=getCurrentActivity(processInstance).getTask().getUUID();
-			runtimeAPI.setActivityInstanceVariable(activityInstanceUUID, OUTCOME_SELECTION_TASK_VARIABLE, inputData);  //TODO:make it configurable
+			runtimeAPI.setActivityInstanceVariable(activityInstanceUUID, OUTCOME_SELECTION_TASK_VARIABLE, inputData);
 			if(adHocToData != null){
 				runtimeAPI.setProcessInstanceVariable(processInstance.getProcessInstanceUUID(), ROUTE_TO_SCRIPT_PROCESS_VARIABLE, adHocToData);
 				runtimeAPI.startTask(activityInstanceUUID, true);
@@ -149,7 +150,8 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 	
 	/**
 	 * Delete Process Instances
-	 * @param processID
+	 * 
+	 * @param processInstance
 	 * @throws ScriptEngineException 
 	 */
 	//TODO make this method private 
@@ -186,8 +188,8 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 	 * Get list of task variables available with the task.
 	 * (Note:For Scripting Engine this will return number of outcomes associated with the particular script/task/activity.)
 	 *
-	 * @param processID
-	 * @return
+	 * @param processInstance
+	 * @return List of task variable values
 	 * @throws Exception 
 	 */
 	@Override

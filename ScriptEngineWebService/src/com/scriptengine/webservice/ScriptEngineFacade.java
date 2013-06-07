@@ -12,7 +12,6 @@ import javax.servlet.ServletContextEvent;
  * <code>ScriptEngineFacade</code> is an web service. </p>
  * 
  * @author Shirish singh
- * @since 1.6
  */
 @WebService
 @SOAPBinding(style = Style.RPC)
@@ -55,7 +54,7 @@ public interface ScriptEngineFacade {
 	/**
 	 * Function to start Script Engine service.
 	 * 
-	 * @param servletContext
+	 * @param servletContextEvent
 	 * @return script engine process id
 	 */
 	@WebMethod(exclude = true)

@@ -7,13 +7,14 @@
   		com.sun.xml.ws.transport.http.servlet.WSServletContextListener
   	</listener-class>
   </listener>
-  
+   <!-- Script Engine Web Service Servlet Listener-->
   <listener>
     <listener-class>
     	com.scriptengine.script.servlets.listeners.ScriptEngineWSServletListener
     </listener-class>
   </listener>
   
+  <!-- Job Scheduler for cleaning cache-->
   <context-param>
   	<description>Schedule Time for Job to Run After every given seconds</description>
   	<!-- Job scheduling interval -->
@@ -44,26 +45,5 @@
     <servlet-name>ScriptingEngineWS</servlet-name>
     <url-pattern>/se</url-pattern>
   </servlet-mapping>
-  
-<!--   
-  <servlet>
-    <description></description>
-    <display-name>ScriptEngineWSServlet</display-name>
-    <servlet-name>ScriptEngineWSServlet</servlet-name>
-    <servlet-class>com.scriptengine.script.servlets.ScriptEngineWSServlet</servlet-class>
-    <init-param>
-      <description>This is a config Path</description>
-      <param-name>CONFIG_PATH</param-name>
-      <param-value>TBD</param-value>
-    </init-param>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>ScriptEngineWSServlet</servlet-name>
-    <url-pattern>/ScriptEngineWSServlet</url-pattern>
-  </servlet-mapping>
-  
-  	//Note:
-  	//ACCESS URL : http://localhost:8080/ScriptEngineWebService/se?wsdl
- -->
- 
+
 </web-app>

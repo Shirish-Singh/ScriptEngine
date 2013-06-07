@@ -9,11 +9,17 @@ import com.sun.xml.ws.transport.http.servlet.WSServlet;
 
 /**
  * Servlet implementation class ScriptEngineWSServlet
+ * 
+ * @author Shirish singh
  */
 public class ScriptEngineWSServlet extends WSServlet {
-	private static final long serialVersionUID = 1L;
        
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = -4163929973017863034L;
+
+	/**
      * @see HttpServlet#HttpServlet()
      */
     public ScriptEngineWSServlet() {
@@ -28,4 +34,4 @@ public class ScriptEngineWSServlet extends WSServlet {
 	}
 
 }
-//TODO this class can be removed
+//TODO this class can be removed.. check

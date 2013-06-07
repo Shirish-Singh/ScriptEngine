@@ -19,16 +19,23 @@ import com.scriptengine.webservice.ScriptEngineFacade;
 import com.scriptengine.webservice.ScriptEngineFacadeImpl;
 
 /**
- * Application Lifecycle Listener implementation class
+ * Application Life cycle Listener implementation class
  * ScriptEngineWSServletListener
  * 
+ * @author Shirish Singh
  */
 public class ScriptEngineWSServletListener implements ServletContextListener {
 
+	/**
+	 * Logger for Logging Purposes
+	 */
 	protected final static Logger LOGGER = Logger.getLogger(ScriptEngineWSServletListener.class.getName());
+	
+	/**
+	 * Constants
+	 */
 	private static final String TRIGGER_NAME="Clean Cache Trigger";
 	private static final String JOB_NAME="Script Engine Cache";
-	private static final String WEB_INF="/WEB-INF";
 
 	/**
 	 * @see ServletContextListener#contextInitialized(ServletContextEvent)
@@ -51,7 +58,7 @@ public class ScriptEngineWSServletListener implements ServletContextListener {
 	}
 
 	/**
-	 * setup function will create Scheduler Job.
+	 * Setup Scheduling Job
 	 */
 	private void setupSchedulingJob(){
 		JobDetailImpl job = new JobDetailImpl();
@@ -63,7 +70,7 @@ public class ScriptEngineWSServletListener implements ServletContextListener {
 		trigger.setName(TRIGGER_NAME);
 		try {
 			trigger.setCronExpression(ScriptEngineConstants.SCHEDULE_TIME);
-			LOGGER.log(Level.INFO, "Script Engine: Job Satrted");
+			LOGGER.log(Level.INFO, "Script Engine: Scheduling job Triggered");
 			scheduler = new StdSchedulerFactory().getScheduler();
 			scheduler.start();
 			scheduler.scheduleJob(job, trigger);

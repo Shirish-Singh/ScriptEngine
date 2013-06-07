@@ -14,6 +14,7 @@ import com.scriptengine.script.workflow.helper.WorkFlowHelper;
 import com.scriptengine.script.workflow.service.WorkFlowService;
 
 /**
+ * An Helper class for Script Engine Facade
  * 
  * @author Shirish Singh
  *
@@ -22,59 +23,73 @@ public class ScriptEngineHelper {
 
 	private final static Logger LOGGER = Logger.getLogger(WorkFlowService.class.getName());
 	
+	/**
+	 * Server Path
+	 */
 	private static String realServerPath = null;
 
+	/**
+	 * Initialise Script Engine Helper
+	 */
 	private static final ScriptEngineHelper scriptEngineHelper=new ScriptEngineHelper();
-
+	
+	/**
+	 * private script Engine Helper constructor
+	 */
 	private ScriptEngineHelper(){
 		super();
 	}
-
-	public static String getRealPath() {
+	
+	/**
+	 * @return realServerPath
+	 */
+	public static String getRealServerPath() {
 		return realServerPath;
 	}
 
-	public static void setRealPath(String realServerPath) {
+	/**
+	 * 
+	 * @param realServerPath
+	 */
+	public static void setRealServerPath(String realServerPath) {
 		ScriptEngineHelper.realServerPath = realServerPath;
 	}
 	
 	/**
 	 * Return scriptEngineHelper singleton object
-	 * @return
+	 * 
+	 * @return scriptEngineHelper
 	 */
 	public static ScriptEngineHelper getInstance(){
 		return scriptEngineHelper;
 	}
 
 	/**
-	 * 
 	 * @return Path of Bar
 	 */
 	public String getBarPath(){
-		return getRealPath()+ScriptEngineConstants.BAR_FILE_PATH;
+		return getRealServerPath()+ScriptEngineConstants.BAR_FILE_PATH;
 
 	}
 
 	/**
-	 * 
 	 * @return Path of JAAS
 	 */
 	public String getJAASPath(){
-		return getRealPath()+ScriptEngineConstants.JAAS_FILE_PATH;
+		return getRealServerPath()+ScriptEngineConstants.JAAS_FILE_PATH;
 
 	}
 
 	/**
-	 * 
 	 * @return Path of Bonita Home 
 	 */
 	public String getBonitaHomePath(){
-		return getRealPath()+ScriptEngineConstants.BONITA_HOME_PATH;
+		return getRealServerPath()+ScriptEngineConstants.BONITA_HOME_PATH;
 
 	}
 	/**
-	 * clean function for cleaning Script Engine cache and deleting all process.
-	 * @param id
+	 * Clean function for cleaning Script Engine cache and deleting all process.
+	 * 
 	 * @return boolean true(successful)/false(failed)
 	 */
 	public boolean clean(IncomingDataDTO incomingDataDTO){

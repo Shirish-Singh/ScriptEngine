@@ -3,40 +3,56 @@ package com.scriptengine.script.workflow.dto;
 import java.util.List;
 
 /**
- * User: Shirish Singh
- * Date: 3/29/13
- * Time: 9:42 PM
+ * Process Details DTO class for containing process related details
+ * 
+ * @author Shirish Singh
  */
 public class ProcessDetailsDTO {
 
-    String processID;
+    private String processId;
 
-    String processDescription;
+    private String processDescription;
 
-    List<String> processVariables;
+    private List<String> processVariables;
 
-    //ProcessInstanceUUID
-
-    public String getProcessID() {
-        return processID;
+    /**
+     * @return processId
+     */
+    public String getProcessId() {
+        return processId;
+    }
+    
+    /**
+     * @param processId
+     */
+    public void setProcessId(String processId) {
+        this.processId = processId;
     }
 
-    public void setProcessID(String processID) {
-        this.processID = processID;
-    }
-
+    /**
+     * @return processDescription
+     */
     public String getProcessDescription() {
         return processDescription;
     }
 
+    /**
+     * @param processDescription
+     */
     public void setProcessDescription(String processDescription) {
         this.processDescription = processDescription;
     }
-
+    
+    /**
+     * @return processVariables
+     */
     public List<String> getProcessVariables() {
         return processVariables;
     }
-
+    
+    /**
+     * @param processVariables
+     */
     public void setProcessVariables(List<String> processVariables) {
         this.processVariables = processVariables;
     }
