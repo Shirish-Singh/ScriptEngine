@@ -33,7 +33,7 @@ public class IncomingDataDTO {
 	}
 
 	/**
-	 * @param typeID
+	 * @param typeId
 	 */
 	public void setTypeId(String typeId) {
 		this.typeId = typeId;
