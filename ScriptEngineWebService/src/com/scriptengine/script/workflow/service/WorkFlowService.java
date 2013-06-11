@@ -145,7 +145,7 @@ public abstract class WorkFlowService {
 			return true;
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE,"Clean- Failed : Script Engine Exception in clean Script Engine ");
-			e.getMessage();
+			e.printStackTrace();
 			return false;
 		}finally{
 			// Clear cache

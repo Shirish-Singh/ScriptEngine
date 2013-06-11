@@ -17,9 +17,7 @@ import com.scriptengine.script.workflow.service.WorkFlowServiceImpl;
 /**
  * An Helper Class for Work Flow Service
  * 
- * User: Shirish Singh
- * Date: 3/30/13
- * Time: 12:33 AM
+ * @author Shirish Singh
  */
 public class WorkFlowHelper {
 
@@ -33,7 +31,7 @@ public class WorkFlowHelper {
 	 */
 	private final static List<String> LAST_STATE_DATA=new ArrayList<String>();
 	/**
-	 * Servlet context for storing process defination attribute
+	 * Servlet context for storing process definition attribute
 	 */
 	private static ServletContext servletContext = null;
 	
