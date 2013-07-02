@@ -11,6 +11,7 @@ import javax.servlet.ServletContextEvent;
  * perform operations on Script Engine. <br>
  * <code>ScriptEngineFacade</code> is an web service. </p>
  * 
+ * Note: If you are going to give this interface to client make sure it is the same one that you have here.
  * @author Shirish singh
  */
 @WebService
