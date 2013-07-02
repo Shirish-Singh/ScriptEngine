@@ -56,7 +56,8 @@ public abstract class WorkFlowService {
 	//TODO
 	//Take END and Start State from Process variable
 	//*If in case of Exception of Severe level restart server clean journal automatically.. [Need to get in depth knowledge of Bonita api run time in this case ).
-
+	//USe AOP for logging , Login purpose
+	//Move methods From  facade layer to helper
 	//NOTE: Always put variables in state.. in diagram..for current architecture
 	
 	protected final static Logger LOGGER = Logger.getLogger(WorkFlowService.class.getName());
