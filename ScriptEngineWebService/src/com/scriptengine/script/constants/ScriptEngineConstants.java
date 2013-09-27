@@ -28,7 +28,7 @@ public class ScriptEngineConstants {
 	public static final String DEFAULT=PHONE_TYPE;
 	
 	//Path required at run time
-	public static final String BAR_FILE_PATH = "/resources/configuration/ScriptEngine.bar";
+	public static final String BAR_FILE_PATH = "/resources/configuration";
 	public static final String JAAS_FILE_PATH = "/resources/configuration/jaas-standard.cfg";
 	public static final String BONITA_HOME_PATH = "/resources/bonita";
 	

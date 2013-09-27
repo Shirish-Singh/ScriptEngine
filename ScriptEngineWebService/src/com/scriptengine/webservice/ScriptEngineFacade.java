@@ -6,6 +6,8 @@ import javax.jws.soap.SOAPBinding;
 import javax.jws.soap.SOAPBinding.Style;
 import javax.servlet.ServletContextEvent;
 
+import com.scriptengine.dto.ScriptDetailsDTO;
+
 /**
  * <code>ScriptEngineFacade</code> exposes basic functions that can be used to
  * perform operations on Script Engine. <br>
@@ -27,7 +29,7 @@ public interface ScriptEngineFacade {
 	 * @return current script name or error if any.
 	 */
 	@WebMethod
-	String fetchCurrentScript(String id, String typeId);
+	ScriptDetailsDTO fetchCurrentScript(String id, String typeId);
 
 	/**
 	 * Function to get outcome list associated with provided id and type id.
@@ -59,5 +61,5 @@ public interface ScriptEngineFacade {
 	 * @return script engine process id
 	 */
 	@WebMethod(exclude = true)
-	public String startScriptService(ServletContextEvent servletContextEvent);
+	public void startScriptService(ServletContextEvent servletContextEvent);
 }

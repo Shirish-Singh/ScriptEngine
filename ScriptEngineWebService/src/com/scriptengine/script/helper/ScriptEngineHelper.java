@@ -7,9 +7,9 @@ import javax.security.auth.login.LoginException;
 
 import org.ow2.bonita.facade.runtime.ProcessInstance;
 
+import com.scriptengine.dto.IncomingDataDTO;
 import com.scriptengine.script.Exception.ScriptEngineException;
 import com.scriptengine.script.constants.ScriptEngineConstants;
-import com.scriptengine.script.dto.IncomingDataDTO;
 import com.scriptengine.script.workflow.helper.WorkFlowHelper;
 import com.scriptengine.script.workflow.service.WorkFlowService;
 

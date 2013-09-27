@@ -1,4 +1,4 @@
-package com.scriptengine.script.dto;
+package com.scriptengine.dto;
 
 /**
  * Simple DTO class for holding incoming data
@@ -7,22 +7,22 @@ package com.scriptengine.script.dto;
  */
 public class IncomingDataDTO {
 	
-	private String id=null;
+	private String sessionId=null;
 	private String typeId=null;
 	private Long timeStamp=null;
 
 	/**
 	 * @return Id
 	 */
-	public String getId() {
-		return id;
+	public String getSessionId() {
+		return sessionId;
 	}
 
 	/**
 	 * @param id
 	 */
-	public void setId(String id) {
-		this.id = id;
+	public void setSessionId(String sessionId) {
+		this.sessionId = sessionId;
 	}
 	
 	/**
@@ -61,7 +61,7 @@ public class IncomingDataDTO {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result
-				+ ((id == null) ? 0 : id.hashCode());
+				+ ((sessionId == null) ? 0 : sessionId.hashCode());
 		result = prime * result + ((typeId == null) ? 0 : typeId.hashCode());
 		return result;
 	}
@@ -78,10 +78,10 @@ public class IncomingDataDTO {
 		if (getClass() != obj.getClass())
 			return false;
 		IncomingDataDTO other = (IncomingDataDTO) obj;
-		if (id == null) {
-			if (other.id != null)
+		if (sessionId == null) {
+			if (other.sessionId != null)
 				return false;
-		} else if (!id.equals(other.id))
+		} else if (!sessionId.equals(other.sessionId))
 			return false;
 		if (typeId == null) {
 			if (other.typeId != null)
@@ -96,7 +96,7 @@ public class IncomingDataDTO {
 	 */
 	@Override
 	public String toString() {
-		return "IncomingDataDTO [id=" + id + ", typeId=" + typeId
+		return "IncomingDataDTO [sessionId=" + sessionId + ", typeId=" + typeId
 				+ ", timeStamp=" + timeStamp + "]";
 	}
 

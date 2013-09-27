@@ -1,6 +1,8 @@
 package com.scriptengine.script.workflow.service;
 
 import java.io.File;
+import java.io.FilenameFilter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,8 +26,8 @@ import org.ow2.bonita.util.BonitaConstants;
 import org.ow2.bonita.util.BusinessArchiveFactory;
 import org.ow2.bonita.util.SimpleCallbackHandler;
 
+import com.scriptengine.dto.IncomingDataDTO;
 import com.scriptengine.script.Exception.ScriptEngineException;
-import com.scriptengine.script.dto.IncomingDataDTO;
 import com.scriptengine.script.helper.ScriptEngineHelper;
 import com.scriptengine.script.workflow.dto.ProcessDetailsDTO;
 import com.scriptengine.script.workflow.dto.TaskDetailsDTO;
@@ -78,15 +80,15 @@ public abstract class WorkFlowService {
 	protected final QueryRuntimeAPI queryRuntimeAPI = AccessorUtil.getQueryRuntimeAPI();
 	protected final QueryDefinitionAPI queryDefinationAPI = AccessorUtil.getQueryDefinitionAPI();
 
-	private ProcessDefinition processDefinition=null;
-	private ProcessInstanceUUID processInstanceUUID=null;
+	private Map<String,ProcessDefinition> processDefinitions = null;
+//	private ProcessInstanceUUID processInstanceUUID=null;
 
 	/**
 	 * Function to begin process. Bar File is Deployed. Path's are set. 
 	 * @return ProcessDetailsDTO
 	 * @throws ScriptEngineException 
 	 */
-	public final ProcessDetailsDTO beginProcess() throws ScriptEngineException {
+	public final void beginProcess() throws ScriptEngineException {
 
 		LOGGER.log(Level.INFO,"Script Engine: Begin Process");
 		LOGGER.log(Level.INFO,"BAR FILE IS DEPLOYED AT:"+ScriptEngineHelper.getInstance().getBarPath());
@@ -101,12 +103,14 @@ public abstract class WorkFlowService {
 			//clean Work Flow Engine
 			cleanScriptEngine(); //One Time Operation (Restart Process)
 			//deploy
-			ProcessDefinition processDefinition = deployBar();
+			//ProcessDefinition processDefinition = deployBar();
+			Map<String, ProcessDefinition> processDefinitionMap = deployBar();
 			//set process definition
-			setProcessDefinition(processDefinition);
+			//setProcessDefinition(processDefinition);
+			setProcessDefinitions(processDefinitionMap);
 			//set Process Definition ServletContext
-			setProcessDefinitionInServletContext(processDefinition);
-			return WorkFlowHelper.constructProcessDetailsDTO(getProcessDefinition(), null);
+			setProcessDefinitionInServletContext(processDefinitionMap);
+			//return WorkFlowHelper.constructProcessDetailsDTO(getProcessDefinition(), null);
 		} catch (Exception exception) {
 			LOGGER.log(Level.SEVERE,"Script Engine : Exception in beginProcess:"+exception.getMessage());
 			exception.printStackTrace();
@@ -130,8 +134,8 @@ public abstract class WorkFlowService {
 	 * @param processDefinition
 	 */
 	private void setProcessDefinitionInServletContext(
-			ProcessDefinition processDefinition) {
-		WorkFlowHelper.getServletContext().setAttribute(WorkFlowHelper.PROCESS_DEFINATION,processDefinition);
+			Map<String, ProcessDefinition> processDefinitions) {
+		WorkFlowHelper.getServletContext().setAttribute(WorkFlowHelper.PROCESS_DEFINATION,processDefinitions);
 	}
 
 
@@ -159,12 +163,29 @@ public abstract class WorkFlowService {
 	 * @return
 	 * @throws Exception
 	 */
-	protected ProcessDefinition deployBar() throws Exception {
+	protected Map<String, ProcessDefinition> deployBar() throws Exception {
 		LOGGER.log(Level.INFO,"Script Engine: Deploying Bar");
-		//deploy the bar file
-		File barFile = new File(ScriptEngineHelper.getInstance().getBarPath());
-		BusinessArchive businessArchive = BusinessArchiveFactory.getBusinessArchive(barFile);
-		return managementAPI.deploy(businessArchive);
+		
+		File barDir = new File(ScriptEngineHelper.getInstance().getBarPath());
+		
+		File[] files = barDir.listFiles(new FilenameFilter() {			
+											@Override
+											public boolean accept(File dir, String fileName) {
+												return fileName.endsWith(".bar");
+											}
+									    });
+		
+		Map<String, ProcessDefinition> processDefinitionMap = new HashMap<String, ProcessDefinition>();
+		//deploy the bar files
+		for(File barFile : files){
+			System.out.println(" \n\n \t\t  BarFile : " + barFile + " \n\n");
+			BusinessArchive businessArchive = BusinessArchiveFactory.getBusinessArchive(barFile);
+			ProcessDefinition processDefinition = managementAPI.deploy(businessArchive);
+			System.out.println(" Deployed Process  :  " + processDefinition.getName() + "\n\n ");
+			processDefinitionMap.put(processDefinition.getName(), processDefinition);
+		}
+		return processDefinitionMap;
+		
 	}
 	
 	/**
@@ -180,16 +201,31 @@ public abstract class WorkFlowService {
 		}
 		//Not present in cache create one and initialise
 		//This Code is to initialise Script Engine and take it to State depending on Type Id.
-		ProcessDefinition definition=(ProcessDefinition) WorkFlowHelper.getServletContext().getAttribute(WorkFlowHelper.PROCESS_DEFINATION);
-		Map<IncomingDataDTO,ProcessInstance> map=WorkFlowHelper.getInMemoryCache();
-		synchronized (this) {
-			ProcessInstanceUUID processInstanceUUID=runtimeAPI.instantiateProcess(definition.getUUID());
-			ProcessInstance processInstance=queryRuntimeAPI.getProcessInstance(processInstanceUUID);
-			map.put(incomingDataDTO, processInstance);
-			WorkFlowHelper.setInMemoryCache(map);
-			//This is basically to initialise
-			executeTask(processInstance,incomingDataDTO.getTypeId(),null);
-			return processInstance;
+		//ProcessDefinition definition=(ProcessDefinition) WorkFlowHelper.getServletContext().getAttribute(WorkFlowHelper.PROCESS_DEFINATION);
+		ProcessDefinition definition = null;
+		System.out.println("incomingDataDTO.getTypeId()  " + incomingDataDTO.getTypeId());
+			
+		definition = getProcessDefinitions().get(incomingDataDTO.getTypeId());
+		
+		LOGGER.log(Level.INFO," definition : " + definition);
+		
+		if(definition != null){
+			System.out.println(" definition : " + definition.getUUID());
+			Map<IncomingDataDTO,ProcessInstance> map = WorkFlowHelper.getInMemoryCache();
+			synchronized (this) {
+				ProcessInstanceUUID processInstanceUUID = runtimeAPI.instantiateProcess(definition.getUUID());
+				System.out.println(" processInstanceUUID : " + processInstanceUUID);
+				ProcessInstance processInstance = queryRuntimeAPI.getProcessInstance(processInstanceUUID);
+				System.out.println(" processInstance : " + processInstance);
+				map.put(incomingDataDTO, processInstance);
+				WorkFlowHelper.setInMemoryCache(map);
+				//This is basically to initialise
+				//executeTask(processInstance,incomingDataDTO.getTypeId(),null);
+				return processInstance;
+			}
+		} 
+		else {
+			throw new ScriptEngineException("Invalid Process Type", "Scripting Engine Process Definition Not Found");
 		}
 	}
 
@@ -203,22 +239,22 @@ public abstract class WorkFlowService {
 		return runtimeAPI.instantiateProcess(processDefinition.getUUID());
 	}
 
-	/**
-	 * getProcessInstanceUUID
-	 *
-	 * @return ProcessInstanceUUID
-	 */
-	public ProcessInstanceUUID getProcessInstanceUUID() {
-		return processInstanceUUID;
-	}
+//	/**
+//	 * getProcessInstanceUUID
+//	 *
+//	 * @return ProcessInstanceUUID
+//	 */
+//	public ProcessInstanceUUID getProcessInstanceUUID() {
+//		return processInstanceUUID;
+//	}
 
 	/**
 	 * setProcessDefinition
 	 *
 	 * @param processDefinition
 	 */
-	private void setProcessDefinition(ProcessDefinition processDefinition) {
-		this.processDefinition = processDefinition;
+	private void setProcessDefinitions(Map<String,ProcessDefinition> processDefinitions) {
+		this.processDefinitions = processDefinitions;
 	}
 
 	/**
@@ -226,8 +262,8 @@ public abstract class WorkFlowService {
 	 *
 	 * @return ProcessDefinition
 	 */
-	public ProcessDefinition getProcessDefinition() {
-		return processDefinition;
+	public Map<String,ProcessDefinition> getProcessDefinitions() {
+		return processDefinitions;
 	}
 
 	/**
@@ -255,7 +291,7 @@ public abstract class WorkFlowService {
 	 * @return ProcessDetailsDTO
 	 * @throws ScriptEngineException 
 	 */
-	abstract public ProcessDetailsDTO fetchProcessDetails() throws ScriptEngineException;
+	abstract public ProcessDetailsDTO fetchProcessDetails(String processName) throws ScriptEngineException;
 
 	/**
 	 * Function to Execute Task

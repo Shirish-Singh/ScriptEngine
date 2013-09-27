@@ -11,9 +11,10 @@ import javax.servlet.ServletContextEvent;
 
 import org.ow2.bonita.facade.runtime.ProcessInstance;
 
+import com.scriptengine.dto.IncomingDataDTO;
+import com.scriptengine.dto.ScriptDetailsDTO;
 import com.scriptengine.script.Exception.ScriptEngineException;
 import com.scriptengine.script.constants.ScriptEngineConstants;
-import com.scriptengine.script.dto.IncomingDataDTO;
 import com.scriptengine.script.helper.ScriptEngineHelper;
 import com.scriptengine.script.workflow.dto.ProcessDetailsDTO;
 import com.scriptengine.script.workflow.dto.TaskDetailsDTO;
@@ -47,18 +48,21 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	 * @see ScriptEngineFacade#startScriptService(ServletContextEvent)
 	 */
 	@Override
-	public String startScriptService(ServletContextEvent servletContextEvent) {
+	public void startScriptService(ServletContextEvent servletContextEvent) {
 		try {
 			// Set Real Path
 			ScriptEngineHelper.setRealServerPath(servletContextEvent.getServletContext().getRealPath("/WEB-INF").replace("\\", "/"));
 			// Set Servlet Context
 			WorkFlowHelper.setServletContext(servletContextEvent.getServletContext());
-			ProcessDetailsDTO processDetailsDTO = WorkFlowHelper.getWorkFlowServiceInstance().beginProcess();
+			
+			WorkFlowHelper.getWorkFlowServiceInstance().beginProcess();
+			
+			ProcessDetailsDTO processDetailsDTO = WorkFlowHelper.constructProcessDetailsDTO("PhoneClient_phoneDebtor", null);
 			// Set AD_HOC variables to AD_HOC List
 			adHocList = processDetailsDTO.getProcessVariables();
-			return processDetailsDTO.getProcessId();
+			//processDetailsDTO.getProcessId();
 		} catch (ScriptEngineException e) {
-			return "ERROR[101]:ERROR OCCURED WHILE STARTING SCRIPTING ENGINE: "+ e.getMessage();
+			LOGGER.log(Level.SEVERE,"ERROR[101]:ERROR OCCURED WHILE STARTING SCRIPTING ENGINE : "+ e.getMessage());
 		}
 	}
 
@@ -67,36 +71,56 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	 */
 	@Override
 	@WebMethod
-	public String fetchCurrentScript(String id, String typeId) {
-		if (isDataNull(id)) {
-			return "VALIDATION ERROR: Incoming Data is Invalid";
+	public ScriptDetailsDTO fetchCurrentScript(String id, String processName) {
+		
+		ScriptDetailsDTO scriptDetailsDTO = new ScriptDetailsDTO();
+		
+		if (isDataNull(id)) {			
+			scriptDetailsDTO.setErrorMsg("VALIDATION ERROR: Incoming Data is Invalid");
+			return scriptDetailsDTO;
 		}
-		if (isDataNull(typeId)) {
-			typeId = ScriptEngineConstants.DEFAULT;
-		}
+		
+		
+		processName = processName.replace('.', '_');
+		
+		LOGGER.log(Level.INFO," processName : "+ processName);
+	
+		
 
-		if (!typeId.matches("[1-9]")) { 
+		/*if (!typeId.matches("[1-9]")) { 
 			// TODO ( What can be done here is fetch
 			// this number list from process diagram
 			// ..think)
 			// TODO Refactor , make it configurable or handle validation in
 			// other way..
-			return "VALIDATION ERROR: Provided Type ID Doesnt Exist, please send typeID in range [1-9]";
-		}
+			scriptDetailsDTO.setErrorMsg("VALIDATION ERROR: Provided Type ID Doesnt Exist, please send typeID in range [1-9]");
+			return scriptDetailsDTO;
+		}*/
 		try {
 			// Login to proceed
 			WorkFlowHelper.getWorkFlowServiceInstance().login(); // TODO Not Good here
 			// Create IncomingDataDTO
-			IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId, TimeUtil.getCurrentUnixTimeStamp());
+			IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, processName, TimeUtil.getCurrentUnixTimeStamp());
 			// Fetch ProcessInstance
 			// Check if incomingDataDTO is present in cache if yes get process
 			// instance for the same else create process instance and return it.
+			System.out.println("Fetching process Instace");
 			ProcessInstance processInstance = WorkFlowHelper.getWorkFlowServiceInstance().getProcessInstance(incomingDataDTO);
 			// Get Task Details DTO based on processInstance
 			TaskDetailsDTO currentTaskDetailsDTO = WorkFlowHelper.getWorkFlowServiceInstance().fetchTaskDetails(processInstance);
-			return currentTaskDetailsDTO.getTaskName();
+			List<String> listContact = WorkFlowHelper.getWorkFlowServiceInstance().fetchCurrentTaskVariableValues(processInstance);
+			listContact = findAndAddAdHocVariables(listContact);
+			
+			scriptDetailsDTO.setScriptName(currentTaskDetailsDTO.getTaskName());
+			scriptDetailsDTO.setOutcomes(listContact);
+			
+			return scriptDetailsDTO;
+		} catch (ScriptEngineException se) {
+			scriptDetailsDTO.setErrorMsg("ERROR[102]:ERROR OCCURED WHILE FETCHING CURRENT SCRIPT : " + se.getErrorName() + " :: " + se.getErrorDescription());
+			return scriptDetailsDTO;
 		} catch (Exception e) {
-			return "ERROR[102]:ERROR OCCURED WHILE FETCHING CURRENT SCRIPT: "+ e.getMessage();
+			scriptDetailsDTO.setErrorMsg("ERROR[102]:ERROR OCCURED WHILE FETCHING CURRENT SCRIPT : " + e.getMessage());
+			return scriptDetailsDTO;
 		}
 	}
 
@@ -105,20 +129,24 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	 */
 	@Override
 	@WebMethod
-	public String[] fetchPossibleOutcomeList(String id, String typeId) {
+	public String[] fetchPossibleOutcomeList(String id, String processName) {
 		if (isDataNull(id)) {
 			return new String[] { "VALIDATION ERROR: Incoming Data is Invalid:" + id };
 		}
-		if (isDataNull(typeId)) {
-			return new String[] { "VALIDATION ERROR: Type ID is Invalid:" + typeId };
+		if (isDataNull(processName)) {
+			return new String[] { "VALIDATION ERROR: Type ID is Invalid:" + processName };
 		}
-		if (isProcessIDInCorrect(id, typeId)) {
-			return new String[] { "VALIDATION ERROR: Process ID is Invalid:" + id + typeId };
+		
+		processName = processName.replace('.', '_');
+		
+		IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, processName, TimeUtil.getCurrentUnixTimeStamp());
+		if (isProcessIDInCorrect(incomingDataDTO)) {
+			return new String[] { "VALIDATION ERROR: Process ID is Invalid:" + id + processName };
 		}
 		try {
 			// Login to proceed
 			WorkFlowHelper.getWorkFlowServiceInstance().login();
-			IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId, TimeUtil.getCurrentUnixTimeStamp());
+			
 			// Fetch ProcessInstance
 			ProcessInstance processInstance = WorkFlowHelper.getWorkFlowServiceInstance().getProcessInstance(incomingDataDTO);
 			List<String> listContact = WorkFlowHelper.getWorkFlowServiceInstance().fetchCurrentTaskVariableValues(processInstance);
@@ -135,49 +163,70 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	 */
 	@Override
 	@WebMethod
-	public String submitLineItem(String id, String typeId, String inputData) {
+	public String submitLineItem(String id, String processName, String inputData) {
+		System.out.println(" Inside submitLineItem " );
+		System.out.println(" processName :  " + processName );
+		System.out.println(" inputData :  " + inputData );
 		// TODO Validation process for fetch/submit
 		if (isDataNull(id, inputData)) {
+			System.out.println("VALIDATION ERROR: Incoming Data is Invalid:" + id + " and " + inputData);
 			return "VALIDATION ERROR: Incoming Data is Invalid:" + id + " and " + inputData; // SB
 		}
-		if (isProcessIDInCorrect(id, typeId)) {
-			return "VALIDATION ERROR: Process ID is Invalid:" + id + typeId; // SB
+		if (isDataNull(processName)) {
+			System.out.println("VALIDATION ERROR: processName is Invalid:" + processName);
+			return "VALIDATION ERROR: processName is Invalid:" + processName;
 		}
-		if (isDataNull(typeId)) {
-			return "VALIDATION ERROR: Type Id is Invalid:" + typeId;
+		
+		processName = processName.replace('.', '_');
+		
+		IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, processName, TimeUtil.getCurrentUnixTimeStamp());
+		
+		if (isProcessIDInCorrect(incomingDataDTO)) {
+			System.out.println("VALIDATION ERROR: Process ID is Invalid:" + id + " : " + processName);
+			return "VALIDATION ERROR: Process ID is Invalid:" + id + processName; // SB
 		}
-		if (!Arrays.asList(fetchPossibleOutcomeList(id, typeId)).contains(
+
+		
+		/*if (!Arrays.asList(fetchPossibleOutcomeList(id, processName)).contains(
 				inputData)) {
 			return "VALIDATION ERROR: Input Data is Invalid:" + inputData;
-		}
+		}*/
 		String result = ScriptEngineConstants.FAILED;
 		try {
 			String adHoc = null;
 			WorkFlowHelper.getWorkFlowServiceInstance().login();
-			IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId, TimeUtil.getCurrentUnixTimeStamp());
+			
 			// Fetch ProcessInstance
 			ProcessInstance processInstance = WorkFlowHelper.getWorkFlowServiceInstance().getProcessInstance(incomingDataDTO);
+			System.out.println(" processInstance :  " + processInstance );
 			// Check for adHocData
-			if (getAdHocList().contains(inputData)) {
-				List<String> previousOutcomes = WorkFlowHelper.getWorkFlowServiceInstance().fetchCurrentTaskVariableValues(processInstance);
-				if (previousOutcomes.contains(AD_HOC)) {
-					adHoc = inputData;
-					inputData = AD_HOC;
+			if("PhoneClient_phoneDebtor".equalsIgnoreCase(processName) || "PhoneClient_phoneReference".equalsIgnoreCase(processName) 
+					|| "PhoneClient_phoneCoDebtor".equalsIgnoreCase(processName) ){
+				
+				if (getAdHocList(processName).contains(inputData)) {
+					List<String> previousOutcomes = WorkFlowHelper.getWorkFlowServiceInstance().fetchCurrentTaskVariableValues(processInstance);
+					if (previousOutcomes.contains(AD_HOC)) {
+						adHoc = inputData;
+						inputData = AD_HOC;
+					}
+				}
+				//EXECUTE TASK
+				if (adHoc != null) {
+					// AD HOC SCENARIO
+					System.out.println(" AD HOC SCENARIO :  " + processInstance );
+					// Complete current task and based on outcome move to next task.
+					WorkFlowHelper.getWorkFlowServiceInstance().executeTask(processInstance, inputData, adHoc); 
+					return result = ScriptEngineConstants.SUCCESS;
 				}
 			}
-			//EXECUTE TASK
-			if (adHoc != null) {
-				// AD HOC SCENARIO
-				// Complete current task and based on outcome move to next task.
-				WorkFlowHelper.getWorkFlowServiceInstance().executeTask(processInstance, inputData, adHoc); 
-				return result = ScriptEngineConstants.SUCCESS;
-			}
 			// REGULAR SCENARIO
+			System.out.println(" REGULAR SCENARIO :  " + processInstance );
 			// Complete current task and based on outcome move to next task.
 			WorkFlowHelper.getWorkFlowServiceInstance().executeTask(processInstance, inputData, null); 
 			result = ScriptEngineConstants.SUCCESS;
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE,"ERROR[104]: ERROR OCCURED WHILE SUBMITTING LINE ITEM: "+ e.getMessage());
+			return result;
 		}
 		return result;
 	}
@@ -191,8 +240,7 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	 * @param typeId
 	 * @return
 	 */
-	private boolean isProcessIDInCorrect(String id, String typeId) {
-		IncomingDataDTO incomingDataDTO = createIncomingDataDTO(id, typeId,TimeUtil.getCurrentUnixTimeStamp()); //TODO: This should not be done here..
+	private boolean isProcessIDInCorrect(IncomingDataDTO incomingDataDTO) {
 		return !WorkFlowHelper.getInMemoryCache().containsKey(incomingDataDTO);
 	}
 
@@ -219,8 +267,8 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	 * @return list of ad hoc variables
 	 * @throws ScriptEngineException
 	 */
-	private List<String> getAdHocList() throws ScriptEngineException {
-		return WorkFlowHelper.getWorkFlowServiceInstance().fetchProcessDetails().getProcessVariables();
+	private List<String> getAdHocList(String processName) throws ScriptEngineException {
+		return WorkFlowHelper.getWorkFlowServiceInstance().fetchProcessDetails(processName).getProcessVariables();
 	}
 
 	/**
@@ -246,9 +294,9 @@ public class ScriptEngineFacadeImpl implements ScriptEngineFacade {
 	 * @param timeStamp
 	 * @return
 	 */
-	private IncomingDataDTO createIncomingDataDTO(String id, String typeId,long timeStamp) {
+	private IncomingDataDTO createIncomingDataDTO(String sessionId, String typeId,long timeStamp) {
 		IncomingDataDTO dataDTO = new IncomingDataDTO();
-		dataDTO.setId(id);
+		dataDTO.setSessionId(sessionId);
 		dataDTO.setTypeId(typeId);
 		dataDTO.setTimeStamp(timeStamp);
 		return dataDTO;

@@ -10,8 +10,8 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import com.scriptengine.dto.IncomingDataDTO;
 import com.scriptengine.script.constants.ScriptEngineConstants;
-import com.scriptengine.script.dto.IncomingDataDTO;
 import com.scriptengine.script.helper.ScriptEngineHelper;
 import com.scriptengine.script.workflow.helper.WorkFlowHelper;
 
@@ -49,7 +49,7 @@ public class ScriptEngineJobScheduler implements Job {
 			if(currentTimeStamp>futureTimeStamp){
 				LOGGER.log(Level.INFO,"<<<<<-- Stale Mapping Found, Removing mapping and deleting ProcessInstance"+" -->>>>>");
 				boolean result=ScriptEngineHelper.getInstance().clean(dataDTO);
-				LOGGER.log(Level.INFO,"<<<<<-- Process instance for id: "+dataDTO.getId()+" and Type Id:"+dataDTO.getTypeId() +" Deleted:"+result+" -->>>>>" );
+				LOGGER.log(Level.INFO,"<<<<<-- Process instance for id: "+dataDTO.getSessionId()+" and Type Id:"+dataDTO.getTypeId() +" Deleted:"+result+" -->>>>>" );
 			}
 			LOGGER.log(Level.INFO,"<<<<<-- Total Entries in Memory Cache:" + mappingMap.size()+" at TimeStamp:"+TimeUtil.getCurrentUnixTimeStamp()+" -->>>>>");
 		}

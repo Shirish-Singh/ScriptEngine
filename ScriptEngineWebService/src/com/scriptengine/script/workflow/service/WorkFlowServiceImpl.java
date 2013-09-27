@@ -18,8 +18,8 @@ import org.ow2.bonita.facade.runtime.ProcessInstance;
 import org.ow2.bonita.facade.runtime.TaskInstance;
 import org.ow2.bonita.facade.uuid.ActivityInstanceUUID;
 
+import com.scriptengine.dto.IncomingDataDTO;
 import com.scriptengine.script.Exception.ScriptEngineException;
-import com.scriptengine.script.dto.IncomingDataDTO;
 import com.scriptengine.script.workflow.dto.ProcessDetailsDTO;
 import com.scriptengine.script.workflow.dto.TaskDetailsDTO;
 import com.scriptengine.script.workflow.helper.WorkFlowHelper;
@@ -84,9 +84,9 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 	 * @throws ScriptEngineException 
 	 */
 	@Override
-	public ProcessDetailsDTO fetchProcessDetails() throws ScriptEngineException {
+	public ProcessDetailsDTO fetchProcessDetails(String processName) throws ScriptEngineException {
 		try {
-			return WorkFlowHelper.constructProcessDetailsDTO((ProcessDefinition) WorkFlowHelper.getServletContext().getAttribute(WorkFlowHelper.PROCESS_DEFINATION), null);
+			return WorkFlowHelper.constructProcessDetailsDTO(processName, null);
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE,"Script Engine: Something Went Wrong with fetchProcessDetails: "+e.getMessage());
 			e.printStackTrace();
@@ -102,14 +102,18 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 	 * @throws InstanceNotFoundException 
 	 */
 	public ActivityInstance getCurrentActivity(ProcessInstance processInstance) throws ScriptEngineException, InstanceNotFoundException {
-		Collection<TaskInstance> tasks=queryRuntimeAPI.getTasks(processInstance.getProcessInstanceUUID());
-		//Check there should be only one task in active state
-		for(TaskInstance instance:tasks){
-			if(instance.getState().equals(ActivityState.READY) || instance.getState().equals(ActivityState.EXECUTING))
-				return instance;
+		try{
+			Collection<TaskInstance> tasks=queryRuntimeAPI.getTasks(processInstance.getProcessInstanceUUID());
+			//Check there should be only one task in active state
+			for(TaskInstance instance:tasks){
+				if(instance.getState().equals(ActivityState.READY) || instance.getState().equals(ActivityState.EXECUTING))
+					return instance;
+			}
+			LOGGER.log(Level.SEVERE,"No ActivityInstance in Ready State...");
+		}catch (Exception e) {
+			throw new ScriptEngineException("ERROR_GET_EXECUTE_TASK","No ActivityInstance in Ready State...",e);
 		}
-		LOGGER.log(Level.SEVERE,"No ActivityInstance in Ready State...");
-		throw new ScriptEngineException("ERROR_GET_EXECUTE_TASK","No ActivityInstance in Ready State...",null);
+		return null;
 	}
 
 
@@ -123,7 +127,9 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 	 */
 	public void executeTask(final ProcessInstance processInstance, final String inputData, final String adHocToData) throws ScriptEngineException {
 		try{
+			System.out.println(" executeTask : " + processInstance);
 			final ActivityInstanceUUID activityInstanceUUID=getCurrentActivity(processInstance).getTask().getUUID();
+			System.out.println(" activityInstanceUUID : " + activityInstanceUUID);
 			runtimeAPI.setActivityInstanceVariable(activityInstanceUUID, OUTCOME_SELECTION_TASK_VARIABLE, inputData);
 			if(adHocToData != null){
 				runtimeAPI.setProcessInstanceVariable(processInstance.getProcessInstanceUUID(), ROUTE_TO_SCRIPT_PROCESS_VARIABLE, adHocToData);
@@ -133,10 +139,14 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 				runtimeAPI.startTask(activityInstanceUUID, true);
 				runtimeAPI.finishTask(activityInstanceUUID, true);
 			}
+			
 			if(inputData.equals(END) || (adHocToData!=null?adHocToData.equals(END):false)){
+				LOGGER.log(Level.INFO," \n\n Deleting cache entry : inputData : " + inputData + " : adHocToData : " + adHocToData );
 				deleteProcessInstanceAndCacheEntry(processInstance);
 			}
+			
 			if(WorkFlowHelper.isLastInputData(inputData)){
+				LOGGER.log(Level.INFO," \n\n Deleting cache entry : Last Input Data : inputData : " + inputData );
 				deleteProcessInstanceAndCacheEntry(processInstance);
 			}
 			LOGGER.log(Level.INFO,"Script Engine: Execute Task:["+inputData+"]");
@@ -196,7 +206,7 @@ public class WorkFlowServiceImpl extends WorkFlowService {
 	public List<String> fetchCurrentTaskVariableValues(ProcessInstance processInstance) throws ScriptEngineException {
 		try {
 			List<String> variableValues = new ArrayList<String>();
-			ActivityDefinition activityDefinition = queryDefinationAPI.getProcessActivity(getProcessDefinition().getUUID(), getCurrentActivity(processInstance).getActivityName());
+			ActivityDefinition activityDefinition = queryDefinationAPI.getProcessActivity(processInstance.getProcessDefinitionUUID(), getCurrentActivity(processInstance).getActivityName());
 			DataFieldDefinition dataFieldDefinition = activityDefinition.getDataFields().iterator().next();
 			Set<String> dataFieldDefinitionEnumValues = dataFieldDefinition.getEnumerationValues();
 			for (String dataFieldDefinitionValue : dataFieldDefinitionEnumValues) {

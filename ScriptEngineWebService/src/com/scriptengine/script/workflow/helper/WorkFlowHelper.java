@@ -1,15 +1,19 @@
 package com.scriptengine.script.workflow.helper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.servlet.ServletContext;
+
 import org.ow2.bonita.facade.def.majorElement.DataFieldDefinition;
 import org.ow2.bonita.facade.def.majorElement.ProcessDefinition;
 import org.ow2.bonita.facade.runtime.ActivityInstance;
 import org.ow2.bonita.facade.runtime.ProcessInstance;
-import com.scriptengine.script.dto.IncomingDataDTO;
+
+import com.scriptengine.dto.IncomingDataDTO;
 import com.scriptengine.script.workflow.dto.ProcessDetailsDTO;
 import com.scriptengine.script.workflow.dto.TaskDetailsDTO;
 import com.scriptengine.script.workflow.service.WorkFlowServiceImpl;
@@ -29,7 +33,10 @@ public class WorkFlowHelper {
 	/**
 	 * List of last state
 	 */
-	private final static List<String> LAST_STATE_DATA=new ArrayList<String>();
+	private final static List<String> LAST_STATE_DATA = Arrays.asList("", 
+			"VISIT_SUCCESSFUL", "INVALID_ADDRESS", "CLIENT_NOT_AT_ADDRESS", "CLIENT_NOT_AT_HOME", "VISIT_CLIENT_DECEASED", "OTHER", "VISITING_AGENT_DISPATCHED", 
+			"SUE_IN_PROGRESS", "SUE_SUCCESSFUL", "SUE_FAILED" );
+
 	/**
 	 * Servlet context for storing process definition attribute
 	 */
@@ -38,12 +45,13 @@ public class WorkFlowHelper {
 	/**
 	 * Instance of Work Flow Service
 	 */
-	private final static WorkFlowServiceImpl INSTANCE=new WorkFlowServiceImpl();
+	private final static WorkFlowServiceImpl INSTANCE = new WorkFlowServiceImpl();
 	/**
 	 * Constants
 	 */
-	public final static String PROCESS_DEFINATION="processDefination";
-	public final static String PROCESS_VARIABLE="processVariable";
+	public final static String PROCESS_DEFINATION = "processDefination";
+	public final static String PROCESS_DEFINATIONS = "processDefinations";
+	public final static String PROCESS_VARIABLE = "processVariable";
 	
 
 	/**
@@ -98,20 +106,23 @@ public class WorkFlowHelper {
 	 * @param processDetailsDTO
 	 * @return ProcessDetailsDTO
 	 */
-	public static ProcessDetailsDTO constructProcessDetailsDTO(ProcessDefinition processDefinition, ProcessDetailsDTO processDetailsDTO) {
+	public static ProcessDetailsDTO constructProcessDetailsDTO(String processName, ProcessDetailsDTO processDetailsDTO) {
+		ProcessDefinition processDefinition = getWorkFlowServiceInstance().getProcessDefinitions().get(processName);
 		if (processDefinition == null) {
 			return null;
 		}
 		if (processDetailsDTO == null) {
 			processDetailsDTO = new ProcessDetailsDTO();
 		}
-		List<String> listProcessVariable=new ArrayList<String>();
-		DataFieldDefinition dataFieldDefinition=  processDefinition.getDatafield(PROCESS_VARIABLE);
-		Set<String> processVariableSet=dataFieldDefinition.getEnumerationValues();
+		List<String> listProcessVariable = new ArrayList<String>();
+		DataFieldDefinition dataFieldDefinition =  processDefinition.getDatafield(PROCESS_VARIABLE);
+		Set<String> processVariableSet = dataFieldDefinition.getEnumerationValues();
 		processDetailsDTO.setProcessId(processDefinition.getUUID().getValue());
-		for(String processVariable:processVariableSet){
+		
+		for(String processVariable : processVariableSet){
 			listProcessVariable.add(processVariable);
 		}
+		
 		processDetailsDTO.setProcessVariables(listProcessVariable);
 		return processDetailsDTO;
 	}
@@ -151,15 +162,17 @@ public class WorkFlowHelper {
 	}
 	
 	/**
-	 * Method to return leaf nodes which doesnt contain END state but are Last State. 
+	 * Method to return leaf nodes which doesn't contain END state but are Last State. 
 	 * 
 	 * @return List of Leaf End Node. List<String>
 	 */
 	private static List<String> getLastStateList() {
 
-		if(LAST_STATE_DATA.size() > 0){ //TODO NOT GOOD CODE SHOULD CHANGE
+		/*if(LAST_STATE_DATA.size() > 0){ //TODO NOT GOOD CODE SHOULD CHANGE
 			return LAST_STATE_DATA;
-		}
+		}*/
+		
+		/*
 		//List with CB
 		LAST_STATE_DATA.add("REGISTRATION_SUCCESSFUL");
 		LAST_STATE_DATA.add("REGISTRATION_FAILED");
@@ -191,7 +204,7 @@ public class WorkFlowHelper {
 		//SELL-WRITE OFF
 		LAST_STATE_DATA.add("SELL_WRITE_IN_PROGRESS");
 		LAST_STATE_DATA.add("SOLD");
-		LAST_STATE_DATA.add("WRITE_OFF");
+		LAST_STATE_DATA.add("WRITE_OFF");*/
 		
 		//Return
 		return LAST_STATE_DATA;
